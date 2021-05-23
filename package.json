@@ -1,0 +1,23 @@
+{
+  "name": "elmer-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./lib/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "ts-node ./app/index.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "elmer-common": "^0.1.10",
+    "express": "^4.17.1",
+    "log4js": "^6.3.0",
+    "reflect-metadata": "^0.1.13",
+    "yaml": "^1.10.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.11",
+    "nodemon": "^2.0.7"
+  }
+}
