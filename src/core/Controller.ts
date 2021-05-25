@@ -1,8 +1,7 @@
 import "reflect-metadata";
-import { Express,Request, Response } from "express";
+import { Express, Request, Response } from "express";
 import { logger } from "../logs";
-import { ARouter } from "./ARouter";
-import GlobalStore,{ DECORATOR_MODEL_TYPE } from "./GlobalStore";
+import GlobalStore,{ DECORATOR_MODEL_TYPE, DECORATOR_KEY } from "./GlobalStore";
 import DefineDecorator from "./DefineDecorator";
 
 export const ROUTER_FLAG_SSID = "ROUTER_FLAG_SSID_9728e438-d856-41ca-b3d3-11812048";
@@ -13,7 +12,7 @@ export type TypeHttpType = "GET" | "POST" | "PUT" | "DELETE" | "OPTIONS";
 export const Controller = (namespace: string) => {
     return (target: new(...args: any[]) => any) => {
         DefineDecorator(() => {
-            Reflect.defineMetadata(ROUTER_KEY + "_namespace", namespace, target);
+            Reflect.defineMetadata("router_namespace", namespace, target);
             Reflect.defineMetadata(ROUTER_KEY, ROUTER_FLAG_SSID, target);
             Reflect.defineMetadata(DECORATOR_MODEL_TYPE, "Controller", target);
             target.prototype.namespace = namespace;
@@ -22,20 +21,35 @@ export const Controller = (namespace: string) => {
     }
 }
 
+const getRequestParams = (target: any,name: string, req: Request, res: Response) => {
+    const key = "PARAM_DECORATOR_" + DECORATOR_KEY;
+    const callbacks = target[key] ? target[key][name] : null;
+    if(callbacks) {
+        const args = [];
+        callbacks.map((item) => {
+            const index = item.index;
+            const callback = item.callback;
+            args[index] = callback(req, res);
+        });
+        return args;
+    }
+}
+
 export const RequestMapping = (path: string, type?: TypeHttpType, async?: boolean) => {
     return (target: any, attr: string, descriptor: PropertyDescriptor) => {
-        const subscribe = ((handler:Function, routePath: string, method: TypeHttpType, isAsync: boolean) => {
+        const subscribe = ((handler:Function, routePath: string, method: TypeHttpType, isAsync: boolean, attr: string) => {
             return function(app:Express){
                 const owner = this;
                 const mType = method || "GET";
                 const mPath = ("/" + this.namespace + "/" + routePath).replace(/\/\//g, "/");
                 const mTypeCallback = async function(req: Request, res: Response) {
                     logger.info(`[${mType}] ` + req.url);
+                    const paramer: any[] = getRequestParams(target,attr, req, res) || [];
                     if(isAsync) {
-                        const respData = await handler.call(owner, req, res);
+                        const respData = await handler.apply(owner, paramer);
                         res.send(respData);
                     } else {
-                        res.send(handler.call(owner, req, res));
+                        res.send(handler.apply(owner, paramer));
                     }
                 };
                 logger.info(`[INIT_${mType}] `+ mPath);
@@ -60,7 +74,7 @@ export const RequestMapping = (path: string, type?: TypeHttpType, async?: boolea
                         app.get(mPath, mTypeCallback);
                 }
             };
-        })(descriptor.value, path, type, async);
+        })(descriptor.value, path, type, async, attr);
         // subscribe.call(target);
         Object.defineProperty(target, ROUTER_KEY + "_" + attr, {
             enumerable: true,

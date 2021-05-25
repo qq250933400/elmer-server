@@ -5,7 +5,7 @@
         "emitDecoratorMetadata": true,
         "noFallthroughCasesInSwitch": true,
         "noImplicitAny": false,
-        "sourceMap": false,
+        "sourceMap": true,
         "allowJs": false,
         "checkJs": false,
         "module": "commonjs",

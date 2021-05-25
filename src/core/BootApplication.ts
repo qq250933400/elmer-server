@@ -4,7 +4,9 @@ import { Express,Request, Response } from "express";
 import GlobalStore,{ DECORATOR_MODEL_TYPE } from "./GlobalStore";
 import DefineDecorator from "./DefineDecorator";
 import { ROUTER_KEY, ROUTER_FLAG_SSID } from "./Controller";
-
+import { getApplicationConfig } from "../config";
+import { logger } from "../logs";
+import { json } from 'body-parser';
 /**
  * 初始化所有controller
  * @param app 
@@ -45,9 +47,18 @@ export const BootApplication = (Target: new(...args: any[]) => any) => {
         Reflect.defineMetadata(DECORATOR_MODEL_TYPE,"BootApplication", Target);
         GlobalStore.add(Target);
         Target.prototype.main = () => {
+            const applicationConfig = getApplicationConfig();
+            const host = applicationConfig?.Server?.host || "0.0.0.0";
+            const port = applicationConfig?.Server?.port || 80;
             const app = express();
+            // include middleware for express framework
+            app.use(json());
+            // end include middleware
             initRouter(app);
             mainCallback.call(Target.prototype);
+            app.listen(applicationConfig?.Server?.port, host, ()=>{
+                logger.info(`Server on: ${host}:${port}`);
+            });
         };
     }, Target);
 }

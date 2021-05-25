@@ -1,8 +1,8 @@
-import { Controller, RequestMapping, ARouter } from "../../src";
+import { Controller, RequestMapping } from "../../src";
 import { Express } from "express";
 
 @Controller("login")
-export class Login extends ARouter {
+export class Login {
     app:Express;
 
     @RequestMapping("/config", "GET", true)
@@ -10,9 +10,8 @@ export class Login extends ARouter {
         return this.ajaxData();
     }
     ajaxData(): Promise<any> {
-        return new Promise<any>((resolve) => {
+        return new Promise<any>((resolve: Function) => {
             setTimeout(() => {
-                console.log("timeout");
                 resolve({status: 400})
             }, 3000);
         });

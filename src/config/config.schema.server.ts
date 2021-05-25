@@ -1,12 +1,16 @@
 export default {
     properties: {
         port: {
-            type: 'number',
+            type: 'Number',
             default: 80
         },
         host: {
-            type: 'string',
+            type: 'String',
             default: '0.0.0.0'
+        },
+        publicKey: {
+            type: "String",
+            length: 16
         }
     }
 }

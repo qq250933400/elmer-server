@@ -1,3 +1,11 @@
-server:
+Server:
   port: 8000
   host: 'localhost'
+  publicKey: 'AABB-CCDD-112233'
+DB:
+  port: 3306
+  host: '0.0.0.0'
+  type: 'Mysql'
+  prefix: "msj_"
+  user: "root"
+  password: "mac2019"

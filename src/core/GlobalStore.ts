@@ -20,6 +20,7 @@ const StoreMemory:TypeStoreMemory = {
 
 export const DECORATOR_MODEL_TYPE = "DECERATE_MODEL_TYPE";
 export const DECORATOR_MODEL_PARAMS = "DECORATOR_MODEL_PARAMS";
+export const DECORATOR_KEY = "9728e438-d856-41ca-b3d3-11812048";
 
 class GlobalStore {
     add(factory: new(...args: any[]) => any): void {
@@ -33,12 +34,12 @@ class GlobalStore {
                 }
                 break;
             case "Controller": {
-                const namespace = Reflect.getMetadata(DECORATOR_MODEL_TYPE, factory);
+                const namespace = Reflect.getMetadata("router_namespace", factory);
                 if(utils.isEmpty(namespace)) {
                     throw new Error("Controller必须定义namespace");
                 }
                 if(StoreMemory.Controllers[namespace]) {
-                    throw new Error("namespace冲突，请检查设置。");
+                    throw new Error(`控制器${namespace}冲突，请检查设置。`);
                 }
                 StoreMemory.Controllers[namespace] = factory;
                 break;

@@ -1,10 +1,12 @@
 export default {
     properties: {
-        server: {
-            type: '#server'
+        Server: {
+            type: '#Server',
+            isRequired: true
         },
-        db: {
-            type: '#db'
+        DB: {
+            type: '#DB',
+            isRequired: true
         }
     }
 };
