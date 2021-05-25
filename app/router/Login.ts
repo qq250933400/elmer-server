@@ -1,19 +1,26 @@
-import { Controller, RequestMapping } from "../../src";
-import { Express } from "express";
+import { Controller, RequestMapping, DataModel, Model, Autowired } from "../../src";
+
+
+@Model
+class LoginModel extends DataModel {
+
+}
 
 @Controller("login")
 export class Login {
-    app:Express;
+
+    @Autowired(LoginModel)
+    loginModel: LoginModel;
 
     @RequestMapping("/config", "GET", true)
     async config():Promise<any> {
         return this.ajaxData();
     }
     ajaxData(): Promise<any> {
-        return new Promise<any>((resolve: Function) => {
-            setTimeout(() => {
-                resolve({status: 400})
-            }, 3000);
+        return this.loginModel.securityQuery((obj) => {
+            return new Promise<any>((_resolve) => {
+                _resolve(obj.query("select * from msj_menus"));
+            });
         });
     }
 }

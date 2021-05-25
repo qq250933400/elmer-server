@@ -7,6 +7,9 @@ export default {
         DB: {
             type: '#DB',
             isRequired: true
+        },
+        Log: {
+            type: "#Log"
         }
     }
 };

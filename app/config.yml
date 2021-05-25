@@ -8,4 +8,7 @@ DB:
   type: 'Mysql'
   prefix: "msj_"
   user: "root"
-  password: "mac2019"
+  password: "b6a1a07edd14c8460ec866a2b6af19ff"
+  dataBase: "sso"
+Log:
+  level: debug

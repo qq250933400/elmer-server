@@ -43,6 +43,17 @@ export const Autowired = (Factory: new(...args: any[]) => any) => {
                     });
                     break;
                 }
+                case "Model": {
+                    Object.defineProperty(target, attrKey, {
+                        enumerable: true,
+                        configurable: true,
+                        get: () => GlobalStore.getModel(Factory),
+                        set: () => {
+                            throw new Error(`不允许重写当前属性(${attrKey})。`);
+                        }
+                    });
+                    break;
+                }
                 default: {
                     throw new Error("不合法的类");
                 }

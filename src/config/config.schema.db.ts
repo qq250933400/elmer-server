@@ -23,6 +23,9 @@ export default {
         },
         password: {
             type: "String"
+        },
+        dataBase: {
+            type: "String"
         }
     }
 }

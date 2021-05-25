@@ -8,6 +8,7 @@ import { parse } from "yaml";
 import ApplicationConfigSchema from "./config.schema.application";
 import DBConfigSchema from './config.schema.db';
 import ServerConfigSchema from './config.schema.server';
+import LogConfigSchema from "./config.schema.log";
 import utils from "../core/utils";
 import { IConfigApplication } from "./IConfigApplication";
 
@@ -18,7 +19,7 @@ const readConfigData = (fileName: string):any => {
     } else if(/\.json/i.test(fileName)) {
         return JSON.parse(txt);
     }
-}
+};
 /**
  * 读取配置，支持yml,json两种数据格式
  * @param fileName 配置文件相对路径
@@ -37,6 +38,7 @@ export const Config = (fileName: string, name?: string, schema?: any) => {
                 schemaObj.addSchema("Application", ApplicationConfigSchema);
                 schemaObj.addSchema("DB", DBConfigSchema);
                 schemaObj.addSchema("Server", ServerConfigSchema);
+                schemaObj.addSchema("Log", LogConfigSchema);
                 if(schema && utils.isEmpty(name)) {
                     schemaObj.addSchema(name, schema);
                 }
@@ -55,4 +57,31 @@ export const Config = (fileName: string, name?: string, schema?: any) => {
 
 export const getApplicationConfig = ():IConfigApplication => {
     return GlobalStore.getConfig("Application");
+};
+
+export const DBConfig = () => {
+    return (Target: any, attr: string) => {
+        Object.defineProperty(Target, attr, {
+            configurable: false,
+            enumerable: true,
+            get: () => GlobalStore.getConfig("Application")?.DB,
+            set: () => {
+                throw new Error("Can not override db config.");
+            }
+        });
+    }
+};
+
+
+export const LogConfig = () => {
+    return (Target: any, attr: string) => {
+        Object.defineProperty(Target, attr, {
+            configurable: false,
+            enumerable: true,
+            get: () => GlobalStore.getConfig("Application")?.Log || {level: "error"},
+            set: () => {
+                throw new Error("Can not override db config.");
+            }
+        });
+    }
 };

@@ -5,7 +5,7 @@ import GlobalStore,{ DECORATOR_MODEL_TYPE } from "./GlobalStore";
 import DefineDecorator from "./DefineDecorator";
 import { ROUTER_KEY, ROUTER_FLAG_SSID } from "./Controller";
 import { getApplicationConfig } from "../config";
-import { logger } from "../logs";
+import { getLogger } from "../logs";
 import { json } from 'body-parser';
 /**
  * 初始化所有controller
@@ -43,6 +43,7 @@ export const BootApplication = (Target: new(...args: any[]) => any) => {
         if(typeof Target.prototype.main !== "function") {
             throw new Error("启动类必须实现main函数。");
         }
+        const logger = getLogger();
         const mainCallback = Target.prototype.main;
         Reflect.defineMetadata(DECORATOR_MODEL_TYPE,"BootApplication", Target);
         GlobalStore.add(Target);

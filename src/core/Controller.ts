@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import { Express, Request, Response } from "express";
-import { logger } from "../logs";
+import { getLogger } from "../logs";
+import { Logger } from "log4js";
 import GlobalStore,{ DECORATOR_MODEL_TYPE, DECORATOR_KEY } from "./GlobalStore";
 import DefineDecorator from "./DefineDecorator";
 
@@ -42,6 +43,7 @@ export const RequestMapping = (path: string, type?: TypeHttpType, async?: boolea
                 const owner = this;
                 const mType = method || "GET";
                 const mPath = ("/" + this.namespace + "/" + routePath).replace(/\/\//g, "/");
+                const logger:Logger = getLogger();
                 const mTypeCallback = async function(req: Request, res: Response) {
                     logger.info(`[${mType}] ` + req.url);
                     const paramer: any[] = getRequestParams(target,attr, req, res) || [];
