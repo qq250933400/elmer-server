@@ -1,9 +1,15 @@
-import { Controller, RequestMapping, DataModel, Model, Autowired } from "../../src";
+import { Controller, RequestMapping, DataModel, Model, DBModel, Autowired } from "../../src";
 
 
-@Model
+@DBModel("sso")
 class LoginModel extends DataModel {
-
+    getNews() {
+        return this.alias("b")
+            .where(["status=1"])
+            .field(["status", "name", "context"])
+            .limit(0,10)
+            .find();
+    }
 }
 
 @Controller("login")
@@ -19,6 +25,7 @@ export class Login {
     ajaxData(): Promise<any> {
         return this.loginModel.securityQuery((obj) => {
             return new Promise<any>((_resolve) => {
+                this.loginModel.getNews();
                 _resolve(obj.query("select * from msj_menus"));
             });
         });

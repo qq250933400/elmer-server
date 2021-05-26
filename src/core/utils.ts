@@ -70,6 +70,7 @@ const getRandomText = (len: number = 8):string => {
     return "";
 }
 
+
 export default {
     aseEncode,
     aseDecode,

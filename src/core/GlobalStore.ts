@@ -9,7 +9,7 @@ type TypeStoreMemory = {
     Controllers: any;
 };
 
-export type TypeSupportModel = "BootApplication" | "Model" | "Service" | "Controller";
+export type TypeSupportModel = "BootApplication" | "Model" | "DBModel" | "Service" | "Controller";
 
 const StoreMemory:TypeStoreMemory = {
     BootApp: null,

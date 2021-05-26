@@ -1,8 +1,9 @@
 {
-  "name": "elmer-server",
+  "name": "elmer-boot",
   "version": "1.0.0",
   "description": "",
   "main": "./lib/index.js",
+  "types": "./types/index.d.ts",
   "scripts": {
     "start": "ts-node ./app/index.ts",
     "dev": "nodemon ./app/index.ts",

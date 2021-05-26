@@ -6,7 +6,7 @@ export default {
         },
         DB: {
             type: '#DB',
-            isRequired: true
+            isRequired: false
         },
         Log: {
             type: "#Log"
