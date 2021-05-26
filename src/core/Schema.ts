@@ -80,33 +80,37 @@ export class Schema extends ASchema{
         return true;
     }
     private checkType(data: any, type:String|RegExp, keyPath: string, name: string) {
-        if(utils.isRegExp(type)) {
-            return type.test(data);
-        } else if(utils.isArray(type)) {
-            return type.indexOf(data) >= 0;
-        } else if(utils.isString(type)) {
-            switch(type) {
-                case "String": {
-                    return utils.isString(data);
-                }
-                case "Object": {
-                    return utils.isObject(data);
-                }
-                case "Array": {
-                    return utils.isArray(data);
-                }
-                case "RegExp": {
-                    return utils.isRegExp(data);
-                }
-                case "Number": {
-                    return utils.isNumber(data);
-                }
-                default: {
-                    throw new Error(`配置${name}参数${keyPath}数据类型错误：${type}, [String, Object, Array, RegExp, Number]`);
-                }
-            }
+        if(undefined === data || null === data) {
+            return true;
         } else {
-            throw new Error(`配置${name}参数${keyPath}数据类型错误：${type}, [String, Object, Array, RegExp, Number]`);
+            if(utils.isRegExp(type)) {
+                return type.test(data);
+            } else if(utils.isArray(type)) {
+                return type.indexOf(data) >= 0;
+            } else if(utils.isString(type)) {
+                switch(type) {
+                    case "String": {
+                        return utils.isString(data);
+                    }
+                    case "Object": {
+                        return utils.isObject(data);
+                    }
+                    case "Array": {
+                        return utils.isArray(data);
+                    }
+                    case "RegExp": {
+                        return utils.isRegExp(data);
+                    }
+                    case "Number": {
+                        return utils.isNumber(data);
+                    }
+                    default: {
+                        throw new Error(`配置${name}参数${keyPath}数据类型错误：${type}, [String, Object, Array, RegExp, Number]`);
+                    }
+                }
+            } else {
+                throw new Error(`配置${name}参数${keyPath}数据类型错误：${type}, [String, Object, Array, RegExp, Number]`);
+            }
         }
     }
 };

@@ -2,6 +2,7 @@ Server:
   port: 8000
   host: 'localhost'
   publicKey: 'AABB-CCDD-112233'
+  staticPath: "./stub"
 DB:
   port: 3306
   host: '0.0.0.0'

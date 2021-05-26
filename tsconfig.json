@@ -16,9 +16,9 @@
             "dom",
             "dom.iterable"
         ],
-        "outDir": "./types",
+        "outDir": "./lib",
         "declaration": true,
-        "declarationDir": "./lib",
+        "declarationDir": "./types",
         "strict": false
     },
     "linterOptions": {

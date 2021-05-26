@@ -1,5 +1,5 @@
 import { Controller, RequestMapping, DataModel, Model, DBModel, Autowired } from "../../src";
-
+import { StaticFiles } from "../../src/core";
 
 @DBModel("sso")
 class LoginModel extends DataModel {
@@ -17,6 +17,8 @@ export class Login {
 
     @Autowired(LoginModel)
     loginModel: LoginModel;
+    @Autowired(StaticFiles)
+    files: StaticFiles;
 
     @RequestMapping("/config", "GET", true)
     async config():Promise<any> {
@@ -24,10 +26,11 @@ export class Login {
     }
     ajaxData(): Promise<any> {
         return this.loginModel.securityQuery((obj) => {
-            return new Promise<any>((_resolve) => {
-                this.loginModel.getNews();
-                _resolve(obj.query("select * from msj_menus"));
-            });
+            return obj.query("select * from msj_menus");
         });
+    }
+    @RequestMapping("/test", "GET")
+    test() {
+        return this.files.readJson("./test.json");
     }
 }

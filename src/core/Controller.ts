@@ -46,12 +46,17 @@ export const RequestMapping = (path: string, type?: TypeHttpType, async?: boolea
                 const logger:Logger = getLogger();
                 const mTypeCallback = async function(req: Request, res: Response) {
                     logger.info(`[${mType}] ` + req.url);
-                    const paramer: any[] = getRequestParams(target,attr, req, res) || [];
-                    if(isAsync) {
-                        const respData = await handler.apply(owner, paramer);
-                        res.send(respData);
-                    } else {
-                        res.send(handler.apply(owner, paramer));
+                    try{
+                        const paramer: any[] = getRequestParams(target,attr, req, res) || [];
+                        if(isAsync) {
+                            const respData = await handler.apply(owner, paramer);
+                            res.send(respData);
+                        } else {
+                            res.send(handler.apply(owner, paramer));
+                        }
+                    } catch(e) {
+                        logger.error(e.stack);
+                        res.status(500).send("Unknow Error");
                     }
                 };
                 logger.info(`[INIT_${mType}] `+ mPath);

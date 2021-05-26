@@ -11,6 +11,7 @@ import ServerConfigSchema from './config.schema.server';
 import LogConfigSchema from "./config.schema.log";
 import utils from "../core/utils";
 import { IConfigApplication } from "./IConfigApplication";
+import { StaticCommon } from "elmer-common";
 
 const readConfigData = (fileName: string):any => {
     const txt = fs.readFileSync(fileName, "utf8");
@@ -85,3 +86,19 @@ export const LogConfig = () => {
         });
     }
 };
+
+export const GetConfig = (Key: string) => {
+    return (Target: any, attr: string) => {
+        Object.defineProperty(Target, attr, {
+            configurable: false,
+            enumerable: true,
+            get: () => {
+                const config = GlobalStore.getConfig("Application").Server;
+                return StaticCommon.getValue(config, Key);
+            },
+            set: () => {
+                throw new Error("Can not override db config.");
+            }
+        });
+    }
+}

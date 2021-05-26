@@ -11,6 +11,9 @@ export default {
         publicKey: {
             type: "String",
             length: 16
+        },
+        staticPath: {
+            type: "String"
         }
     }
 }
