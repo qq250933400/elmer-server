@@ -9,6 +9,7 @@ import ApplicationConfigSchema from "./config.schema.application";
 import DBConfigSchema from './config.schema.db';
 import ServerConfigSchema from './config.schema.server';
 import LogConfigSchema from "./config.schema.log";
+import CrossSiteConfigSchema from "./config.schema.crossSite";
 import utils from "../core/utils";
 import { IConfigApplication } from "./IConfigApplication";
 import { StaticCommon } from "elmer-common";
@@ -40,6 +41,7 @@ export const Config = (fileName: string, name?: string, schema?: any) => {
                 schemaObj.addSchema("DB", DBConfigSchema);
                 schemaObj.addSchema("Server", ServerConfigSchema);
                 schemaObj.addSchema("Log", LogConfigSchema);
+                schemaObj.addSchema("CrossSite", CrossSiteConfigSchema);
                 if(schema && utils.isEmpty(name)) {
                     schemaObj.addSchema(name, schema);
                 }

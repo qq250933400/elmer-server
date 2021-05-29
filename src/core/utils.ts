@@ -35,6 +35,8 @@ const isArray = <T={}>(val: any): val is Array<T> => getType(val) === "[object A
 
 const isNumber = (val: any): val is Number => getType(val) === "[object Number]";
 
+const isBoolean = (val: any): val is Boolean => getType(val) === "[object Boolean]";
+
 const aseIV = "Tka40pVIWalZAzyL";
 const algorithm = "aes-128-cbc";
 const defaultPublicKey = "DOYPdezphI3p0135";
@@ -75,6 +77,7 @@ export default {
     aseEncode,
     aseDecode,
     isArray,
+    isBoolean,
     isEmpty,
     isObject,
     isString,

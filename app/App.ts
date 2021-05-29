@@ -3,6 +3,7 @@ import { TestService } from "./TestService";
 import "./router";
 
 @Config("./app/config.yml")
+@Config("./app/corssSite.json", "CrossSite")
 @BootApplication
 export class App {
     @Autowired(TestService)

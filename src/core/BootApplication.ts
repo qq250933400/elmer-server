@@ -7,6 +7,18 @@ import { ROUTER_KEY, ROUTER_FLAG_SSID } from "./Controller";
 import { getApplicationConfig } from "../config";
 import { getLogger } from "../logs";
 import { json } from 'body-parser';
+
+const crossSiteConfig = (app:Express) => {
+    app.all('*', (req: Request, res: Response, next) => {
+        console.log("Access-Control-Allow-Headers", "Request");
+        res.header("Access-Control-Allow-Origin", "*");
+        //Access-Control-Allow-Headers ,可根据浏览器的F12查看,把对应的粘贴在这里就行
+        res.header("Access-Control-Allow-Headers", "Content-Type");
+        res.header("Access-Control-Allow-Methods", "*");
+        res.header("Content-Type", "application/json;charset=utf-8");
+        next();
+    })
+};
 /**
  * 初始化所有controller
  * @param app 
@@ -52,6 +64,7 @@ export const BootApplication = (Target: new(...args: any[]) => any) => {
             const host = applicationConfig?.Server?.host || "0.0.0.0";
             const port = applicationConfig?.Server?.port || 80;
             const app = express();
+            crossSiteConfig(app);
             // include middleware for express framework
             app.use(json());
             // end include middleware
