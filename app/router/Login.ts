@@ -1,4 +1,4 @@
-import { Controller, RequestMapping, DataModel, Model, DBModel, Autowired } from "../../src";
+import { Controller, RequestMapping, DataModel,QueryParam, Model, DBModel, Autowired } from "../../src";
 import { StaticFiles } from "../../src/core";
 
 @DBModel("sso")
@@ -30,7 +30,8 @@ export class Login {
         });
     }
     @RequestMapping("/test", "GET")
-    test() {
+    test(@QueryParam("test") str: any) {
+        console.log(str);
         return this.files.readJson("./test.json");
     }
 }

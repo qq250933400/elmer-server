@@ -1,7 +1,7 @@
-
+type TypeRequestMethod = "GET" | "POST" | "OPTIONS" | "PUT" | "DELETE";
 interface IConfigCrossSiteRoute {
     path: String;
-    method: "GET" | "POST" | "OPTIONS" | "PUT" | "DELETE";
+    method: TypeRequestMethod[];
     allowHeaders: String[];
 }
 

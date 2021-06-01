@@ -4,6 +4,8 @@ import { getLogger } from "../logs";
 import { Logger } from "log4js";
 import GlobalStore,{ DECORATOR_MODEL_TYPE, DECORATOR_KEY } from "./GlobalStore";
 import DefineDecorator from "./DefineDecorator";
+import { pluginExec } from "../plugin/PluginExec";
+import { TypeRequestProvider } from "../plugin/ABasePlugin";
 
 export const ROUTER_FLAG_SSID = "ROUTER_FLAG_SSID_9728e438-d856-41ca-b3d3-11812048";
 export const ROUTER_KEY = "9728e438-d856-41ca-b3d3-11812048";
@@ -35,7 +37,12 @@ const getRequestParams = (target: any,name: string, req: Request, res: Response)
         return args;
     }
 }
-
+const BeforeRequestHandle = (req: Request, res: Response, next: Function) => {
+    
+};
+const AfterRequestHandle = (req: Request, res: Response, next: Function) => {
+    pluginExec<TypeRequestProvider>(["Request"], "RequestPlugin", "afterRequest", req, res, next);
+}
 export const RequestMapping = (path: string, type?: TypeHttpType, async?: boolean) => {
     return (target: any, attr: string, descriptor: PropertyDescriptor) => {
         const subscribe = ((handler:Function, routePath: string, method: TypeHttpType, isAsync: boolean, attr: string) => {
@@ -44,9 +51,10 @@ export const RequestMapping = (path: string, type?: TypeHttpType, async?: boolea
                 const mType = method || "GET";
                 const mPath = ("/" + this.namespace + "/" + routePath).replace(/\/\//g, "/");
                 const logger:Logger = getLogger();
-                const mTypeCallback = async function(req: Request, res: Response) {
+                const mTypeCallback = async function(req: Request, res: Response, next: Function) {
                     logger.info(`[${mType}] ` + req.url);
                     try{
+                        BeforeRequestHandle(req, res, next)
                         const paramer: any[] = getRequestParams(target,attr, req, res) || [];
                         if(isAsync) {
                             const respData = await handler.apply(owner, paramer);
@@ -57,6 +65,8 @@ export const RequestMapping = (path: string, type?: TypeHttpType, async?: boolea
                     } catch(e) {
                         logger.error(e.stack);
                         res.status(500).send("Unknow Error");
+                    } finally {
+                        AfterRequestHandle(req, res, next);
                     }
                 };
                 logger.info(`[INIT_${mType}] `+ mPath);

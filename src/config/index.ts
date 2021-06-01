@@ -89,14 +89,14 @@ export const LogConfig = () => {
     }
 };
 
-export const GetConfig = (Key: string) => {
+export const GetConfig = (Key: string, name?: string) => {
     return (Target: any, attr: string) => {
         Object.defineProperty(Target, attr, {
             configurable: false,
             enumerable: true,
             get: () => {
-                const config = GlobalStore.getConfig("Application").Server;
-                return StaticCommon.getValue(config, Key);
+                const config = utils.isEmpty(name) ? GlobalStore.getConfig("Application").Server : GlobalStore.getConfig(name);
+                return !utils.isEmpty(Key) ? StaticCommon.getValue(config, Key) : config;
             },
             set: () => {
                 throw new Error("Can not override db config.");

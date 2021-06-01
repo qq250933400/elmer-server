@@ -7,15 +7,12 @@ import { ROUTER_KEY, ROUTER_FLAG_SSID } from "./Controller";
 import { getApplicationConfig } from "../config";
 import { getLogger } from "../logs";
 import { json } from 'body-parser';
+import { pluginExec } from "../plugin/PluginExec";
+import { TypeRequestProvider } from "../plugin/ABasePlugin";
 
 const crossSiteConfig = (app:Express) => {
     app.all('*', (req: Request, res: Response, next) => {
-        console.log("Access-Control-Allow-Headers", "Request");
-        res.header("Access-Control-Allow-Origin", "*");
-        //Access-Control-Allow-Headers ,可根据浏览器的F12查看,把对应的粘贴在这里就行
-        res.header("Access-Control-Allow-Headers", "Content-Type");
-        res.header("Access-Control-Allow-Methods", "*");
-        res.header("Content-Type", "application/json;charset=utf-8");
+        pluginExec<TypeRequestProvider>(["Request"], "RequestPlugin", "beforeRequest", req, res, next);
         next();
     })
 };
@@ -69,7 +66,7 @@ export const BootApplication = (Target: new(...args: any[]) => any) => {
             app.use(json());
             // end include middleware
             initRouter(app);
-            mainCallback.call(Target.prototype);
+            mainCallback.call(Target.prototype, app);
             app.listen(applicationConfig?.Server?.port, host, ()=>{
                 logger.info(`Server on: ${host}:${port}`);
             });

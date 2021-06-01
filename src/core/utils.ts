@@ -37,6 +37,7 @@ const isNumber = (val: any): val is Number => getType(val) === "[object Number]"
 
 const isBoolean = (val: any): val is Boolean => getType(val) === "[object Boolean]";
 
+/** Encode and decode */
 const aseIV = "Tka40pVIWalZAzyL";
 const algorithm = "aes-128-cbc";
 const defaultPublicKey = "DOYPdezphI3p0135";
@@ -72,6 +73,54 @@ const getRandomText = (len: number = 8):string => {
     return "";
 }
 
+/** Http */
+const toUri = <T={}>(queryStr: string):T => {
+    if(!isEmpty(queryStr)) {
+        if(isString(queryStr)) {
+            let textQuery = queryStr.replace(/^\?/, "").replace(/^\s*/, "").replace(/\#[\s\S]*$/, "");
+            const arr = textQuery.split("&");
+            const result = {};
+            const qVReg = /^([a-z0-9_\-]{1,})=([\s\S]*)$/i;
+            for(const qStr of arr) {
+                const qMatch = qStr.match(qVReg);
+                if(qMatch) {
+                    result[qMatch[1]] = decodeURIComponent(qMatch[2]);
+                } else {
+                    const qKey = qStr.replace(/\=\s*$/, "");
+                    result[qKey] = true;
+                }
+            }
+            return result as any;
+        } else {
+            return queryStr;
+        }
+    }
+}
+
+const toQuery = (obj: any): string => {
+    if(obj) {
+        const objArr = [];
+        Object.keys(obj).map((attrKey) => {
+            const attrValue = obj[attrKey];
+            const attrStr = attrValue ? (
+                isObject(attrValue) ? encodeURIComponent(JSON.stringify(attrValue)) : encodeURIComponent(attrValue)
+            ): "";
+            objArr.push(`${attrKey}=${attrStr}`);
+        });
+        return objArr.join("&");
+    }
+}
+const getUri = <T={}>(queryStr: string, key: string): T => {
+    const queryObj = toUri(queryStr);
+    return queryObj ? queryObj[key] : null;
+};
+const guid = (): string => {
+    const S4 = ():string => {
+        // tslint:disable-next-line: no-bitwise
+        return (((1 + Math.random())*0x10000) | 0).toString(16).substr(1);
+    };
+    return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4());
+};
 
 export default {
     aseEncode,
@@ -84,5 +133,9 @@ export default {
     isRegExp,
     isNumber,
     getType,
-    getRandomText
+    getRandomText,
+    getUri,
+    guid,
+    toUri,
+    toQuery
 };

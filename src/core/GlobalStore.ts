@@ -7,6 +7,7 @@ type TypeStoreMemory = {
     ConfigData: any;
     ServicePool: any;
     Controllers: any;
+    Plugins: (new(...args: any[]) => any)[];
 };
 
 export type TypeSupportModel = "BootApplication" | "Model" | "DBModel" | "Service" | "Controller";
@@ -15,7 +16,8 @@ const StoreMemory:TypeStoreMemory = {
     BootApp: null,
     ConfigData: {},
     ServicePool: {},
-    Controllers: {}
+    Controllers: {}, 
+    Plugins: []
 };
 
 export const DECORATOR_MODEL_TYPE = "DECERATE_MODEL_TYPE";
@@ -53,6 +55,12 @@ class GlobalStore {
             StoreMemory.ConfigData[name] = data;
         }
     }
+    setPlugins(plugins: (new(...args: any[]) => any)[]): void {
+        StoreMemory.Plugins = plugins;
+    }
+    getPlugins(): (new(...args: any[]) => any)[] {
+        return StoreMemory.Plugins;
+    }
     getConfig(name: string): any {
         return StoreMemory.ConfigData[name];
     }
@@ -79,7 +87,7 @@ class GlobalStore {
      * @param Factory 
      * @returns 
      */
-    private getClassParams(Factory: new(...args: any[])=>any): any[] {
+    public getClassParams(Factory: new(...args: any[])=>any): any[] {
         const paramTypes: any[] = Reflect.getMetadata("design:paramtypes",Factory);
         const newParams: any[] = [];
         if(paramTypes?.length > 0) {
