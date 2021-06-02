@@ -17,7 +17,7 @@ export class CrossSitePlugin extends ABasePlugin {
     getType(): TypePluginType {
         return "Request";
     }
-    private beforeRequest(req: Request, res: Response, next: Function, opt: any): void {
+    private beforeRequest({}, req: Request, res: Response, next: Function, opt: any): void {
         const method = req.method;
         const configData = this.config.crossSite;
         if(configData?.enabled) {

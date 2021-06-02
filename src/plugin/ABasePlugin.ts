@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import utils from "../core/utils";
 
+type TypePluginCallbackOption = {
+    returnValue: any
+};
 /**
  * provider定义不同类型的plugin的方法，用于不同场景
  * 同一个plugin类可以同时定义多个provider用于handle不同场景做扩展
@@ -8,8 +11,9 @@ import utils from "../core/utils";
 export type TypePluginProvider = "RequestPlugin" | "DataModelPlugin";
 
 export type TypeRequestProvider = {
-    beforeRequest?: (req: Request, res: Response, next: Function) => void;
-    afterRequest?: (req: Request, res: Response, next: Function) => void;
+    beforeRequest?: (options: TypePluginCallbackOption, req: Request, res: Response, next: Function) => void;
+    afterRequest?: (options: TypePluginCallbackOption, req: Request, res: Response, next: Function) => void;
+    beforSend?: (options: TypePluginCallbackOption, data: any) => any;
 };
 export type TypeDataModelProvider = {};
 
@@ -38,16 +42,19 @@ export abstract class ABasePlugin {
 
     destory?(): void;
     register(provider: TypePluginProvider, options: TypePluginRegisterOptions): void {
-        const providerId = "provider_" + utils.guid();
         if(!this.registeState[provider]) {
-            this.registeState[provider] = {};
+            this.registeState[provider] = [];
         }
-        this.registeState[provider][providerId] = options;
+        this.registeState[provider].push(options);
     }
     exec(provider: TypePluginProvider, name: keyof TypePluginRegisterProviders[TypePluginProvider], ...args: any[]): void {
-        const providerObj = this.registeState[provider];
-        providerObj && Object.values(providerObj).map((options: any) => {
-            typeof options[name] === "function" && options[name](...args);
-        });
+        const providers = this.registeState[provider] || [];
+        let execResult = null;
+        for(const options of providers) {
+            if(typeof options[name] === "function"){
+                execResult = options[name](...args);
+            }
+        }
+        return execResult;
     }
 }

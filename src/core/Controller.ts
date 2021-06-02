@@ -4,7 +4,7 @@ import { getLogger } from "../logs";
 import { Logger } from "log4js";
 import GlobalStore,{ DECORATOR_MODEL_TYPE, DECORATOR_KEY } from "./GlobalStore";
 import DefineDecorator from "./DefineDecorator";
-import { pluginExec } from "../plugin/PluginExec";
+import { pluginExec, pluginDestory } from "../plugin/PluginExec";
 import { TypeRequestProvider } from "../plugin/ABasePlugin";
 
 export const ROUTER_FLAG_SSID = "ROUTER_FLAG_SSID_9728e438-d856-41ca-b3d3-11812048";
@@ -41,7 +41,7 @@ const BeforeRequestHandle = (req: Request, res: Response, next: Function) => {
     
 };
 const AfterRequestHandle = (req: Request, res: Response, next: Function) => {
-    pluginExec<TypeRequestProvider>(["Request"], "RequestPlugin", "afterRequest", req, res, next);
+    pluginDestory("Request");
 }
 export const RequestMapping = (path: string, type?: TypeHttpType, async?: boolean) => {
     return (target: any, attr: string, descriptor: PropertyDescriptor) => {
@@ -58,13 +58,27 @@ export const RequestMapping = (path: string, type?: TypeHttpType, async?: boolea
                         const paramer: any[] = getRequestParams(target,attr, req, res) || [];
                         if(isAsync) {
                             const respData = await handler.apply(owner, paramer);
-                            res.send(respData);
+                            const respResult = pluginExec<TypeRequestProvider>(["Request"], "RequestPlugin", "beforSend", respData);
+                            if(respResult) {
+                                res.send(respResult);
+                            } else {
+                                res.send(respData);
+                            }
                         } else {
-                            res.send(handler.apply(owner, paramer));
+                            const respData = handler.apply(owner, paramer);
+                            const respResult = pluginExec<TypeRequestProvider>(["Request"], "RequestPlugin", "beforSend", respData);
+                            if(respResult) {
+                                res.send(respResult);
+                            } else {
+                                res.send(respData);
+                            }
                         }
                     } catch(e) {
                         logger.error(e.stack);
-                        res.status(500).send("Unknow Error");
+                        res.status(500).send({
+                            statusCode: 500,
+                            message: "Technical Error"
+                        });
                     } finally {
                         AfterRequestHandle(req, res, next);
                     }

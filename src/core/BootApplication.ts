@@ -7,7 +7,7 @@ import { ROUTER_KEY, ROUTER_FLAG_SSID } from "./Controller";
 import { getApplicationConfig } from "../config";
 import { getLogger } from "../logs";
 import { json } from 'body-parser';
-import { pluginExec } from "../plugin/PluginExec";
+import { pluginExec, pluginInit } from "../plugin/PluginExec";
 import { TypeRequestProvider } from "../plugin/ABasePlugin";
 import * as Events from "events";
 
@@ -65,7 +65,9 @@ export const BootApplication = (Target: new(...args: any[]) => any) => {
             const host = applicationConfig?.Server?.host || "0.0.0.0";
             const port = applicationConfig?.Server?.port || 80;
             const app = express();
-            Events.EventEmitter.defaultMaxListeners = 0;
+            Events.EventEmitter.defaultMaxListeners = 20;
+            process.setMaxListeners(50);
+            pluginInit(["Server"]);
             crossSiteConfig(app);
             // include middleware for express framework
             app.use(json());
