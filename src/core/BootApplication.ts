@@ -9,11 +9,15 @@ import { getLogger } from "../logs";
 import { json } from 'body-parser';
 import { pluginExec } from "../plugin/PluginExec";
 import { TypeRequestProvider } from "../plugin/ABasePlugin";
+import * as Events from "events";
 
 const crossSiteConfig = (app:Express) => {
     app.all('*', (req: Request, res: Response, next) => {
-        pluginExec<TypeRequestProvider>(["Request"], "RequestPlugin", "beforeRequest", req, res, next);
-        next();
+        const eventObj = {
+            continue: true
+        };
+        pluginExec<TypeRequestProvider>(["Request"], "RequestPlugin", "beforeRequest", req, res, next, eventObj);
+        eventObj.continue && next();
     })
 };
 /**
@@ -61,6 +65,7 @@ export const BootApplication = (Target: new(...args: any[]) => any) => {
             const host = applicationConfig?.Server?.host || "0.0.0.0";
             const port = applicationConfig?.Server?.port || 80;
             const app = express();
+            Events.EventEmitter.defaultMaxListeners = 0;
             crossSiteConfig(app);
             // include middleware for express framework
             app.use(json());

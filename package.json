@@ -1,6 +1,6 @@
 {
     "name": "elmer-boot",
-    "version": "1.0.3",
+    "version": "1.0.8",
     "description": "",
     "main": "./lib/index.js",
     "types": "./types/index.d.ts",

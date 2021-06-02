@@ -28,6 +28,9 @@ export default {
                 rules: {
                     type: "Array<#crossSiteRoute>",
                     isRequired: true
+                },
+                headers: {
+                    type: "Object"
                 }
             }
         },
@@ -44,6 +47,9 @@ export default {
                 },
                 allowHeaders: {
                     type: "Array<String>"
+                },
+                headers: {
+                    type: "Object"
                 }
             }
         }
