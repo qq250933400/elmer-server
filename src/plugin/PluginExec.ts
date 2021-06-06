@@ -1,10 +1,12 @@
 import { TypePluginType, TypePluginProvider } from "./ABasePlugin";
 import StoreMemory from "../core/GlobalStore";
 import { CrossSitePlugin } from "./CrossSitePlugin";
+import { MysqlPlugin } from "./MysqlPlugin";
 import { getLogger } from "../logs";
 
 const CorePlugin = [
-    CrossSitePlugin
+    CrossSitePlugin,
+    MysqlPlugin
 ];
 
 const pluginState = {};

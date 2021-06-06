@@ -54,7 +54,7 @@ export const Autowired = (Factory: new(...args: any[]) => any) => {
                     });
                     break;
                 }
-                case "DBModel": {
+                case "DataModel": {
                     Object.defineProperty(target, attrKey, {
                         enumerable: true,
                         configurable: true,

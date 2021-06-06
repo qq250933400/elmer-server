@@ -7,4 +7,6 @@ export abstract class ADataEngine extends ADataBase {
     abstract dispose(): void;
     abstract createQuery<T={}, P={}>(data: P[]): T;
     abstract query<T={}>(queryString: string): Promise<T>;
+    abstract readDataSource<T={}>(fileName: string): T;
+    abstract parameterization<T={}>(queryStr: any, params: any): T;
 }

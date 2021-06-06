@@ -6,6 +6,7 @@ import GlobalStore,{ DECORATOR_MODEL_TYPE, DECORATOR_KEY } from "./GlobalStore";
 import DefineDecorator from "./DefineDecorator";
 import { pluginExec, pluginDestory } from "../plugin/PluginExec";
 import { TypeRequestProvider } from "../plugin/ABasePlugin";
+import utils from './utils';
 
 export const ROUTER_FLAG_SSID = "ROUTER_FLAG_SSID_9728e438-d856-41ca-b3d3-11812048";
 export const ROUTER_KEY = "9728e438-d856-41ca-b3d3-11812048";
@@ -56,22 +57,20 @@ export const RequestMapping = (path: string, type?: TypeHttpType, async?: boolea
                     try{
                         BeforeRequestHandle(req, res, next)
                         const paramer: any[] = getRequestParams(target,attr, req, res) || [];
-                        if(isAsync) {
-                            const respData = await handler.apply(owner, paramer);
-                            const respResult = pluginExec<TypeRequestProvider>(["Request"], "RequestPlugin", "beforSend", respData);
-                            if(respResult) {
-                                res.send(respResult);
-                            } else {
-                                res.send(respData);
-                            }
+                        const respResult = handler.apply(owner, paramer);
+                        if(utils.isPromise(respResult)) {
+                            respResult.then((respData) => {
+                                const respResultData = pluginExec<TypeRequestProvider>(["Request"], "RequestPlugin", "beforSend", respData);
+                                res.send(respResultData || respData);
+                            })
+                            .catch((err) => {
+                                const respResultData = pluginExec<TypeRequestProvider>(["Request"], "RequestPlugin", "beforSend", err);
+                                res.status(500);
+                                res.send(respResultData || err);
+                            });
                         } else {
-                            const respData = handler.apply(owner, paramer);
-                            const respResult = pluginExec<TypeRequestProvider>(["Request"], "RequestPlugin", "beforSend", respData);
-                            if(respResult) {
-                                res.send(respResult);
-                            } else {
-                                res.send(respData);
-                            }
+                            const respResultData = pluginExec<TypeRequestProvider>(["Request"], "RequestPlugin", "beforSend", respResult);
+                            res.send(respResultData || respResult);
                         }
                     } catch(e) {
                         logger.error(e.stack);

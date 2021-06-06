@@ -8,17 +8,24 @@ type TypeStoreMemory = {
     ServicePool: any;
     Controllers: any;
     Plugins: (new(...args: any[]) => any)[];
+    GlobalObjectFactoryPool: any[];
+    GlobalObjectPool: any;
 };
 
-export type TypeSupportModel = "BootApplication" | "Model" | "DBModel" | "Service" | "Controller";
+type TypeStoreKeys = keyof TypeStoreMemory;
+
+export type TypeSupportModel = "BootApplication" | "Model" | "DataModel" | "Service" | "Controller";
 
 const StoreMemory:TypeStoreMemory = {
     BootApp: null,
     ConfigData: {},
     ServicePool: {},
     Controllers: {}, 
-    Plugins: []
+    Plugins: [],
+    GlobalObjectFactoryPool: [],
+    GlobalObjectPool: {}
 };
+
 
 export const DECORATOR_MODEL_TYPE = "DECERATE_MODEL_TYPE";
 export const DECORATOR_MODEL_PARAMS = "DECORATOR_MODEL_PARAMS";
@@ -81,6 +88,12 @@ class GlobalStore {
             StoreMemory.ServicePool[serviceId] = obj;
             return obj;
         }
+    }
+    getGlobalStore(globalStateKey: TypeStoreKeys): TypeStoreMemory[TypeStoreKeys] {
+        return StoreMemory[globalStateKey];
+    }
+    setGlobalStore<T={}>(globalStateKey: Exclude<TypeStoreKeys, "BootApp" | "ConfigData" | "ServicePool" | "Controllers" | "Plugins">, value: T): void {
+        StoreMemory[globalStateKey] = value as any;
     }
     /**
      * 检查参数类型并实例化注入

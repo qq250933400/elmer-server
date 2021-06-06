@@ -37,6 +37,12 @@ const isNumber = (val: any): val is Number => getType(val) === "[object Number]"
 
 const isBoolean = (val: any): val is Boolean => getType(val) === "[object Boolean]";
 
+const isPromise = (val: any): val is Promise<any> => getType(val) === "[object Promise]";
+
+const isNumeric = (val:any): val is Boolean => !isNaN(val);
+/** 判断对象是否是Global这个Node环境全局对象 */
+const isGlobalObject = (val:any): boolean => getType(val) === "[object global]";
+
 /** Encode and decode */
 const aseIV = "Tka40pVIWalZAzyL";
 const algorithm = "aes-128-cbc";
@@ -121,21 +127,116 @@ const guid = (): string => {
     };
     return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4());
 };
-
+const getValue = <T>(data:object, key:string, defaultValue?: any): T => {
+    const keyValue = key !== undefined && key !== null ? key : "";
+    if (/\./.test(keyValue)) {
+        const keyArr = keyValue.split(".");
+        let isFind = false;
+        let index = 0;
+        let keyStr:any = "";
+        let tmpData:any = data;
+        while (index <= keyArr.length - 1) {
+            keyStr = keyArr[index];
+            isFind = index === keyArr.length - 1;
+            if(isArray(tmpData) && isNumeric(keyStr)) {
+                keyStr = parseInt(keyStr as any, 10);
+            }
+            if(!isFind) {
+                const nextKey = keyArr[keyArr.length - 1];
+                if(isArray(tmpData) || isObject(tmpData) || isGlobalObject(tmpData)) {
+                    //
+                    tmpData = tmpData[keyStr];
+                }
+                if(tmpData && index === keyArr.length - 2) {
+                    if(nextKey === "key") {
+                        tmpData = tmpData.key;
+                        isFind = true;
+                    } else if(nextKey === "length") {
+                        tmpData = tmpData.length;
+                        isFind = true;
+                    }
+                }
+            } else {
+                tmpData = tmpData ? tmpData[keyStr] : undefined;
+            }
+            if(isFind) {
+                break;
+            }
+            index++;
+        }
+        return isFind ? (undefined !== tmpData ? tmpData : defaultValue) : defaultValue;
+    } else {
+        const rResult = data ? (<any>data)[keyValue] : undefined;
+        return data ? (undefined !== rResult ? rResult : defaultValue) : defaultValue;
+    }
+};
+/**
+ * 给指定对象设置属性值
+ * @param data 设置属性值对象
+ * @param key 设置属性key,属性key有多层可使用.区分
+ * @param value 设置属性值
+ * @param fn 自定义设置值回调
+ */
+const setValue = (data:object, key:string, value:any, fn?: Function): boolean => {
+    let isUpdate = false;
+    if(!isObject(data)) {
+        throw new Error("The parameter of data is not a object");
+    }
+    if(isEmpty(key)) {
+        throw new Error("The key can not be an empty string");
+    }
+    if(!isEmpty(value)) {
+        const keyArr = key.split(".");
+        const keyLen = keyArr.length;
+        let index = 0;
+        let tmpData = data;
+        while(index<keyLen) {
+            const cKey = keyArr[index];
+            if(index < keyLen - 1) {
+                // 不是最后一个节点
+                if(!isEmpty(tmpData[cKey])) {
+                    if(isObject(tmpData[cKey])) {
+                        tmpData = tmpData[cKey];
+                    } else {
+                        throw new Error("Can not set value to attribute of " + cKey);
+                    }
+                } else {
+                    tmpData[cKey] = {};
+                    tmpData = tmpData[cKey];
+                }
+            } else {
+                // 要更新数据的节点
+                if(typeof fn === "function") {
+                    fn(tmpData, cKey, value);
+                } else {
+                    tmpData[cKey] = value;
+                }
+                isUpdate = true;
+            }
+            index++;
+        }
+    }
+    return isUpdate;
+};
 export default {
     aseEncode,
     aseDecode,
     isArray,
     isBoolean,
     isEmpty,
+    isGlobalObject,
     isObject,
+    isPromise,
     isString,
     isRegExp,
     isNumber,
+    isNumeric,
     getType,
     getRandomText,
     getUri,
+    getValue,
     guid,
     toUri,
-    toQuery
+    toQuery,
+    setValue
 };

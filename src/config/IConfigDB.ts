@@ -7,4 +7,5 @@ export interface IConfigDB {
     user: string;
     dataBase: string;
     password: string;
+    sourcePath: string;
 }

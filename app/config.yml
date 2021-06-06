@@ -11,5 +11,6 @@ DB:
   user: "root"
   password: "b6a1a07edd14c8460ec866a2b6af19ff"
   dataBase: "sso"
+  sourcePath: "./stub/dataSource"
 Log:
   level: debug

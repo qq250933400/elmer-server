@@ -26,6 +26,10 @@ export default {
         },
         dataBase: {
             type: "String"
+        },
+        sourcePath: {
+            type: "String",
+            isRequired: true
         }
     }
 }

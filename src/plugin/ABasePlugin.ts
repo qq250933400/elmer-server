@@ -1,25 +1,30 @@
 import { Request, Response } from "express";
 import utils from "../core/utils";
 
-type TypePluginCallbackOption = {
+export type TypePluginCallbackOption = {
     returnValue: any
 };
 /**
  * provider定义不同类型的plugin的方法，用于不同场景
  * 同一个plugin类可以同时定义多个provider用于handle不同场景做扩展
  */
-export type TypePluginProvider = "RequestPlugin" | "DataModelPlugin";
+export type TypePluginProvider = "RequestPlugin" | "DataModelPlugin" | "MysqlPlugin";
 
 export type TypeRequestProvider = {
     beforeRequest?: (options: TypePluginCallbackOption, req: Request, res: Response, next: Function) => void;
     afterRequest?: (options: TypePluginCallbackOption, req: Request, res: Response, next: Function) => void;
     beforSend?: (options: TypePluginCallbackOption, data: any) => any;
 };
-export type TypeDataModelProvider = {};
+
+export type TypeDataModelProvider = {
+    parameterization?: (options: TypePluginCallbackOption, queryValue: string|object, params: any) => void;
+    parameterValidate?: () => void;
+};
 
 type TypePluginRegisterProviders = {
     RequestPlugin: TypeRequestProvider;
     DataModelPlugin: TypeDataModelProvider;
+    MysqlPlugin: TypeDataModelProvider;
 };
 
 type TypePluginRegisterOptions= TypePluginRegisterProviders[TypePluginProvider];

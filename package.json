@@ -35,6 +35,7 @@
     },
     "dependencies": {
         "elmer-common": "^0.1.10",
+        "elmer-virtual-dom": "^2.0.12",
         "express": "^4.17.1",
         "log4js": "^6.3.0",
         "mysql": "^2.18.1",

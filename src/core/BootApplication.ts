@@ -10,6 +10,15 @@ import { json } from 'body-parser';
 import { pluginExec, pluginInit } from "../plugin/PluginExec";
 import { TypeRequestProvider } from "../plugin/ABasePlugin";
 import * as Events from "events";
+import { HtmlParse } from "elmer-virtual-dom";
+
+type TypeDefineGlobalObject = {
+    factory: new(...args: any[]) => any;
+    /** 定义当前模块唯一标识 */
+    ssid: string;
+    /** 全局变量名方便调用 */
+    varName: string;
+};
 
 const crossSiteConfig = (app:Express) => {
     app.all('*', (req: Request, res: Response, next) => {
@@ -51,6 +60,24 @@ const initRouter = (app:Express): void => {
     }
 };
 
+const initGlobalObjects = () => {
+    const saveFactories: TypeDefineGlobalObject[] = GlobalStore.getGlobalStore("GlobalObjectFactoryPool");
+    const htmlParse = new HtmlParse();
+    const objPool = {
+        htmlParse
+    };
+    saveFactories?.map((factoryInfo) => {
+        if(!objPool[factoryInfo.varName]) {
+            const params = GlobalStore.getClassParams(factoryInfo.factory) || [];
+            const obj = new factoryInfo.factory(...params);
+            objPool[factoryInfo.varName] = obj;
+        } else {
+            throw new Error(`定义全局模块对象配置错误,指定变量名已经存在。(${factoryInfo.varName})`);
+        }
+    });
+    GlobalStore.setGlobalStore("GlobalObjectPool", objPool);
+};
+
 export const BootApplication = (Target: new(...args: any[]) => any) => {
     DefineDecorator(() => {
         if(typeof Target.prototype.main !== "function") {
@@ -68,6 +95,7 @@ export const BootApplication = (Target: new(...args: any[]) => any) => {
             Events.EventEmitter.defaultMaxListeners = 20;
             process.setMaxListeners(50);
             pluginInit(["Server"]);
+            initGlobalObjects(); // 初始化全局对象
             crossSiteConfig(app);
             // include middleware for express framework
             app.use(json());
@@ -84,3 +112,33 @@ export const BootApplication = (Target: new(...args: any[]) => any) => {
 export type TypeBootApplication = {
     main():void;
 };
+
+export const DefineGlobalObject = (defineFactories: TypeDefineGlobalObject[]) => {
+    return (Target: new(...args: any[]) => any) => {
+        const saveFactories: TypeDefineGlobalObject[] = GlobalStore.getGlobalStore("GlobalObjectFactoryPool");
+        if(saveFactories?.length > 0) {
+            GlobalStore.setGlobalStore("GlobalObjectFactoryPool",[
+                ...saveFactories,
+                ...defineFactories
+            ]);
+        } else {
+            GlobalStore.setGlobalStore("GlobalObjectFactoryPool", defineFactories);
+        }
+    }
+};
+
+export const GetGlobalObject = <T={}>(varName: T & "htmlParse") => {
+    return (target: any, attr: any) => {
+        Object.defineProperty(target, attr, {
+            enumerable: true,
+            configurable: false,
+            get: () => {
+                const objPool = GlobalStore.getGlobalStore("GlobalObjectPool");
+                return objPool[varName];
+            },
+            set: () => {
+                throw new Error("不允许重写当前属性");
+            }
+        });
+    }
+}
