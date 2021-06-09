@@ -23,7 +23,8 @@ export class Login {
     ajaxData(): Promise<any> {
         return this.loginModel.securityQuery((obj) => {
             return obj.query("loginConfig", {
-                name: "test"
+                name: "test",
+                status: `//newB'//`
             })
         });
     }

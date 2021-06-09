@@ -4,7 +4,8 @@ import { ABasePlugin, TypePluginCallbackOption, TypePluginType } from "./ABasePl
 export class MysqlPlugin extends ABasePlugin {
     init(): void {
         this.register("MysqlPlugin", {
-            "parameterization": this.parameterization.bind(this)
+            "parameterization": this.parameterization.bind(this),
+            "parameterValidate": this.parameterValidate.bind(this)
         });
     }
     getId(): string {
@@ -13,18 +14,27 @@ export class MysqlPlugin extends ABasePlugin {
     getType(): TypePluginType {
         return "Request";
     }
-    parameterization(options: TypePluginCallbackOption, queryValue: string|object, params: any, fn: Function) {
-        let queryStr = queryValue.toString();
+    parameterValidate(options: TypePluginCallbackOption, keyValue: any): any {
+        let checkValue:string = options.returnValue || keyValue || "";
+        checkValue = checkValue.replace(/'/g, "\\'").replace(/\/\//g, "");
+        return checkValue;
+    }
+    parameterization(options: TypePluginCallbackOption, queryValue: string|object, params: any, fn: Function): any {
+        let queryStr = options.returnValue || queryValue.toString();
         const varArrs = queryStr.match(/\$\{\s*([a-z0-9_\.]{1,})\s*\}/ig);
         varArrs?.length > 0 && varArrs.map((varStr) => {
             const varM = varStr.match(/\$\{\s*([a-z0-9_\.]{1,})\s*\}/i);
             const dataKey = varM[1];
             let dataValue = utils.getValue(params, dataKey);
             if(typeof fn === "function") {
-                dataValue = fn(dataValue, dataKey);
+                const securityValue = fn(dataValue, dataKey);
+                if(securityValue) {
+                    dataValue = securityValue;
+                }
             }
             queryStr = queryStr.replace(varM[0], dataValue as any);
         });
-        console.log(varArrs);
+        options.returnValue = queryStr;
+        return queryStr;
     }
 }

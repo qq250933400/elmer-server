@@ -82,7 +82,7 @@ export class DataModel {
                 }
                 if(!utils.isEmpty(query)) {
                     const queryValue = this.dataEngine.parameterization(query, parameters);
-                    console.log("-------",query);
+                    console.log("-------",queryValue);
                     resolve(queryValue as any)
                 } else {
                     reject({

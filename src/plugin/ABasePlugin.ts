@@ -17,8 +17,8 @@ export type TypeRequestProvider = {
 };
 
 export type TypeDataModelProvider = {
-    parameterization?: (options: TypePluginCallbackOption, queryValue: string|object, params: any) => void;
-    parameterValidate?: () => void;
+    parameterization?: (options: TypePluginCallbackOption, queryValue: string|object, params: any, fn: Function) => void;
+    parameterValidate?: (options: TypePluginCallbackOption, value: string|number) => void;
 };
 
 type TypePluginRegisterProviders = {
@@ -61,5 +61,8 @@ export abstract class ABasePlugin {
             }
         }
         return execResult;
+    }
+    hasProvider(provider: TypePluginProvider): boolean {
+        return this.registeState[provider] ? true : false;
     }
 }

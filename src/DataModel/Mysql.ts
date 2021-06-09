@@ -50,9 +50,11 @@ export class Mysql extends ADataEngine {
         }
     }
     parameterization(query, params): any {
-        return pluginExec(["Request"], "MysqlPlugin", "parameterization", query, params, (value, key) => {
-            console.log("Checking", value, key);
+        const parameterizationResult = pluginExec(["Request"], "MysqlPlugin", "parameterization", query, params, (value, key) => {
+            const exResult = pluginExec(["Request"], "MysqlPlugin", "parameterValidate", value);
+            return exResult;
         });
+        return parameterizationResult;
     }
     private createConnection<Connection>(): Connection {
         return mysql.createConnection({
