@@ -21,8 +21,6 @@ export const Service = (Target: new(...args:any[]) => any) => {
         if(utils.isEmpty(dKey)) {
             Reflect.defineMetadata(DECORATOR_MODEL_TYPE, "Service", Target);
             Reflect.defineMetadata(idKey, "Service_" + utils.guid(), Target);
-        } else {
-            console.log("Has defined.");
         }
     }, Target);
 };

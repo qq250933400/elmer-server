@@ -24,8 +24,8 @@ export class Login {
         return this.loginModel.securityQuery((obj) => {
             return obj.query("loginConfig", {
                 name: "test",
-                status: `//newB'//`
-            })
+                status:  0
+            });
         });
     }
     @RequestMapping("/test", "GET")

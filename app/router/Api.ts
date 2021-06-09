@@ -17,6 +17,7 @@ export class Api {
     }
     @RequestMapping("/encode", "POST")
     encode(@RequestBody body: TypeRequestBody) {
+        console.log(body, "----");
         return utils.aseEncode(body.text);
     }
 

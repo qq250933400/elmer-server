@@ -15,13 +15,17 @@ export class MysqlPlugin extends ABasePlugin {
         return "Request";
     }
     parameterValidate(options: TypePluginCallbackOption, keyValue: any): any {
-        let checkValue:string = options.returnValue || keyValue || "";
+        let checkValue:string = (options.returnValue || keyValue || "").toString();
         checkValue = checkValue.replace(/'/g, "\\'").replace(/\/\//g, "");
         return checkValue;
     }
     parameterization(options: TypePluginCallbackOption, queryValue: string|object, params: any, fn: Function): any {
         let queryStr = options.returnValue || queryValue.toString();
         const varArrs = queryStr.match(/\$\{\s*([a-z0-9_\.]{1,})\s*\}/ig);
+        const varResult = {
+            values: [],
+            queryString: queryStr
+        };
         varArrs?.length > 0 && varArrs.map((varStr) => {
             const varM = varStr.match(/\$\{\s*([a-z0-9_\.]{1,})\s*\}/i);
             const dataKey = varM[1];
@@ -32,9 +36,11 @@ export class MysqlPlugin extends ABasePlugin {
                     dataValue = securityValue;
                 }
             }
-            queryStr = queryStr.replace(varM[0], dataValue as any);
+            queryStr = queryStr.replace(varM[0], "?");
+            varResult.values.push(dataValue);
         });
         options.returnValue = queryStr;
-        return queryStr;
+        varResult.queryString = queryStr.replace(/^[\r\n\s]*/,"").replace(/[\r\n\s]*$/, "");
+        return varResult;
     }
 }

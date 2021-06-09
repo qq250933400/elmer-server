@@ -8,8 +8,11 @@ import utils from "../core/utils";
 import DefineDecorator from "../core/DefineDecorator";
 import { DECORATOR_MODEL_TYPE } from "../core/GlobalStore";
 import * as path from "path";
-
-type TypeSecurityQueryCallback = (model: DataModel) => Promise<any>;
+type TypeSecurityQueryOptions = {
+    connection: any;
+    query<T={}>(id: string, params: any): Promise<T>;
+};
+type TypeSecurityQueryCallback = (options: TypeSecurityQueryOptions) => Promise<any>;
 
 export const BindModelSource = (modelSource: string) => {
     return (Target: new(...args:any[]) => any) => {
@@ -37,37 +40,62 @@ export class DataModel {
         }
         this.sourceFileName = localSourceFile;
     }
-    connect(): void {
-        this.dataEngine.connect();
+    connect(): Promise<any> {
+        return this.dataEngine.connect();
     }
     destory(): void {
         this.dataEngine.dispose();
     }
     async securityQuery(fn: TypeSecurityQueryCallback): Promise<any> {
         return new Promise<any>((resolve, reject) => {
-            let resultData: any;
             try{
-                this.connect();
-                resultData = fn(this);
+                this.connect()
+                    .then((connection) => {
+                        const conResp = fn({
+                            connection,
+                            query: (id: string, params: any) => this.query(connection, id, params)
+                        });
+                        if(utils.isPromise(conResp)) {
+                            conResp
+                                .then((resp) => {
+                                    resolve(resp);
+                                    this.destory();
+                                })
+                                .catch((err) => {
+                                    if(!utils.isEmpty(err.sqlMessage)) {
+                                        this.logger.error(err.sqlMessage || err.message, err.code);
+                                    } else {
+                                        this.logger.error(err.stack || err.message);
+                                    }
+                                    this.logger.error("QueryString: " + err.sql);
+                                    this.destory();
+                                    reject({
+                                        statusCode: "DB_505",
+                                        message: "query fail"
+                                    });
+                                });
+                        } else {
+                            throw new Error("securityQuery方法callback必须返回Promise对象。");
+                        }
+                    })
+                    .catch((err) => {
+                        this.logger.error(err.sqlMessage, err.code);
+                        reject({
+                            statusCode: "DB_500",
+                            message: "create connection failed"
+                        });
+                    });
             } catch(e) {
                 this.logger.error(e.stack || e.message);
                 reject({
                     statusCode: e.statusCode,
                     message: "系统内部错误"
                 });
-            } finally {
                 this.destory();
             }
-            if(utils.isPromise(resultData)) {
-                resultData
-                    .then((respData) => resolve(respData))
-                    .catch((err) => reject(err));
-            } else {
-                resolve(resultData);
-            }
-        }); 
+        });
     }
-    async query<T={}>(id: string, parameters?: any): Promise<T> {
+    private async query<T={}>(connection: any, id: string, parameters?: any): Promise<T> {
          return new Promise<T>((resolve, reject) => {
             if(!this.sourceData) {
                 this.sourceData = this.dataEngine.readDataSource(this.sourceFileName);
@@ -82,8 +110,11 @@ export class DataModel {
                 }
                 if(!utils.isEmpty(query)) {
                     const queryValue = this.dataEngine.parameterization(query, parameters);
-                    console.log("-------",queryValue);
-                    resolve(queryValue as any)
+                    this.dataEngine.query(connection, queryValue)
+                        .then((mysqlData) => resolve(mysqlData as any))
+                        .catch((err) => {
+                            reject(err);
+                        });
                 } else {
                     reject({
                         statusCode: "DB_405",
