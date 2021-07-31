@@ -1,3 +1,5 @@
+import "./Controller/Test";
+
 export * from "./core/Controller";
 export * from "./core";
 export * from "./config";

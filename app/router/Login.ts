@@ -1,5 +1,7 @@
-import { Controller, RequestMapping, DataModel,QueryParam, Model, BindModelSource, Autowired } from "../../src";
-import { StaticFiles } from "../../src/core";
+import { Controller, RequestMapping, DataModel,QueryParam,RequestCookie, BindModelSource } from "../../src";
+import { Autowired } from "elmer-common";
+import { GetResponse, RequestHeader, StaticFiles } from "../../src/core";
+import { Request, Response } from "express";
 
 @BindModelSource("sso.mysql")
 class LoginModel extends DataModel {
@@ -11,13 +13,20 @@ class LoginModel extends DataModel {
 @Controller("login")
 export class Login {
 
-    @Autowired(LoginModel)
+    @Autowired()
     loginModel: LoginModel;
-    @Autowired(StaticFiles)
+    @Autowired()
     files: StaticFiles;
 
     @RequestMapping("/config", "GET", true)
-    async config():Promise<any> {
+    async config(
+        @QueryParam() page: number,
+        @RequestCookie("token") token: string,
+        @RequestHeader("host") header: any
+    ):Promise<any> {
+        console.log(page);
+        console.log(token);
+        console.log(header);
         return this.ajaxData();
     }
     ajaxData(): Promise<any> {
@@ -29,8 +38,11 @@ export class Login {
         });
     }
     @RequestMapping("/test", "GET")
-    test(@QueryParam("test") str: any) {
+    test(@QueryParam("test") str: any, @GetResponse() res: Response) {
         console.log(str);
+        res.cookie("token", "1230099", {
+            maxAge: 10000
+        });
         return this.files.readJson("./test.json");
     }
 }

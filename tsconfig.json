@@ -18,7 +18,7 @@
         ],
         "outDir": "./lib",
         "declaration": true,
-        "declarationDir": "./types",
+        "declarationDir": "./lib",
         "strict": false
     },
     "linterOptions": {

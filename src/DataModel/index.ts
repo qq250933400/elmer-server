@@ -7,6 +7,7 @@ import { Logger } from "log4js";
 import utils from "../core/utils";
 import DefineDecorator from "../core/DefineDecorator";
 import { DECORATOR_MODEL_TYPE } from "../core/GlobalStore";
+import { Model } from "elmer-common";
 import * as path from "path";
 type TypeSecurityQueryOptions = {
     connection: any;
@@ -17,7 +18,7 @@ type TypeSecurityQueryCallback = (options: TypeSecurityQueryOptions) => Promise<
 export const BindModelSource = (modelSource: string) => {
     return (Target: new(...args:any[]) => any) => {
         DefineDecorator(() => {
-            Reflect.defineMetadata(DECORATOR_MODEL_TYPE, "DataModel", Target);
+            Model(Target);
             Reflect.defineMetadata("ModelSource", modelSource, Target.prototype);
         }, Target);
     };

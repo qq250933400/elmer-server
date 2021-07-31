@@ -1,5 +1,5 @@
 Server:
-  port: 8000
+  port: 8001
   host: 'localhost'
   publicKey: 'AABB-CCDD-112233'
   staticPath: "./stub"

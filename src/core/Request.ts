@@ -24,3 +24,53 @@ export const QueryParam = (key?: string) => {
         });
     };
 };
+
+export const RequestHeader = (key?: string) => {
+    return <T={}>(target: Object, methodName: string, paramIndex: number) => {
+        DefineParamDecorator(target, methodName, paramIndex, () => {
+            return (req: Request, res: Response) => {
+                const headers = req.headers || {};
+                if(utils.isEmpty(key)) {
+                    return headers;
+                } else {
+                    return headers[key];
+                }
+            };
+        });
+    };
+};
+
+export const RequestCookie = (key?: string) => {
+    return <T={}>(target: Object, methodName: string, paramIndex: number) => {
+        DefineParamDecorator(target, methodName, paramIndex, () => {
+            return (req: Request, res: Response) => {
+                const cookieObj = req.cookies || {};
+                if(utils.isEmpty(key)) {
+                    return cookieObj;
+                } else {
+                    return cookieObj ? cookieObj[key] : null;
+                }
+            };
+        });
+    };
+};
+
+export const GetRequest = (key?: string) => {
+    return <T={}>(target: Object, methodName: string, paramIndex: number) => {
+        DefineParamDecorator(target, methodName, paramIndex, () => {
+            return (req: Request, res: Response) => {
+                return req;
+            };
+        });
+    };
+};
+
+export const GetResponse = (key?: string) => {
+    return <T={}>(target: Object, methodName: string, paramIndex: number) => {
+        DefineParamDecorator(target, methodName, paramIndex, () => {
+            return (req: Request, res: Response) => {
+                return res;
+            };
+        });
+    };
+};

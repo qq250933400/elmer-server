@@ -1,4 +1,4 @@
-import { Service, Param } from "../src";
+import { Service } from "elmer-common";
 
 @Service
 class TestApp {
@@ -14,7 +14,7 @@ export class TestService {
         console.log(testApp.test());
         console.log(this.testApp.test())
     }
-    run(@Param linkApp: TestApp, @Param version: String) {
+    run() {
         // this.testApp.test();
         console.log("run TestService");
     }

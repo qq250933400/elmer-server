@@ -1,5 +1,4 @@
 import { Controller, RequestMapping, RequestBody, utils,  } from "../../src";
-import { StaticCommon } from "elmer-common";
 
 type TypeRequestBody = {
     text: string;
@@ -12,7 +11,7 @@ export class Api {
     @RequestMapping("/guid", "GET")
     guid() {
         return {
-            uuid: StaticCommon.guid()
+            uuid: utils.guid()
         };
     }
     @RequestMapping("/encode", "POST")

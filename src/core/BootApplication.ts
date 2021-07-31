@@ -1,5 +1,7 @@
 import "reflect-metadata";
 import * as express from "express";
+import * as path from "path";
+import * as cookieParser from "cookie-parser";
 import { Express,Request, Response } from "express";
 import GlobalStore,{ DECORATOR_MODEL_TYPE } from "./GlobalStore";
 import DefineDecorator from "./DefineDecorator";
@@ -35,6 +37,11 @@ const crossSiteConfig = (app:Express) => {
  */
 const initRouter = (app:Express): void => {
     const controllers = GlobalStore.getControllers();
+    const staticPath = getApplicationConfig()?.Server?.staticPath;
+    if(typeof staticPath === "string" && staticPath.length > 0) {
+        const staticRootPath = path.resolve(process.cwd(), staticPath);
+        app.use(express.static(staticRootPath));
+    }
     if(controllers) {
         Object.keys(controllers).map((namespace) => {
             const Controller = controllers[namespace];
@@ -99,6 +106,8 @@ export const BootApplication = (Target: new(...args: any[]) => any) => {
             crossSiteConfig(app);
             // include middleware for express framework
             app.use(json());
+            // include cookie for express framework
+            app.use(cookieParser());
             // end include middleware
             initRouter(app);
             mainCallback.call(Target.prototype, app);
