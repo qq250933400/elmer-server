@@ -14,6 +14,7 @@ export type TypeRequestProvider = {
     beforeRequest?: (options: TypePluginCallbackOption, req: Request, res: Response, next: Function) => void;
     afterRequest?: (options: TypePluginCallbackOption, req: Request, res: Response, next: Function) => void;
     beforSend?: (options: TypePluginCallbackOption, data: any) => any;
+    exception?: (options: TypePluginCallbackOption, error: Error, req: Request, res: Response) => void;
 };
 
 export type TypeDataModelProvider = {

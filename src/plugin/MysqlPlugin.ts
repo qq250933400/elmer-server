@@ -1,7 +1,12 @@
 import utils from "../core/utils";
 import { ABasePlugin, TypePluginCallbackOption, TypePluginType } from "./ABasePlugin";
+import { DBConfig } from "../config";
+import { IConfigDB } from "../config/IConfigDB";
 
 export class MysqlPlugin extends ABasePlugin {
+    @DBConfig()
+    private config: IConfigDB;
+
     init(): void {
         this.register("MysqlPlugin", {
             "parameterization": this.parameterization.bind(this),
@@ -14,12 +19,12 @@ export class MysqlPlugin extends ABasePlugin {
     getType(): TypePluginType {
         return "Request";
     }
-    parameterValidate(options: TypePluginCallbackOption, keyValue: any): any {
+    parameterValidate(options: TypePluginCallbackOption, keyValue: any, id: string,): any {
         let checkValue:string = (options.returnValue || keyValue || "").toString();
         checkValue = checkValue.replace(/'/g, "\\'").replace(/\/\//g, "");
         return checkValue;
     }
-    parameterization(options: TypePluginCallbackOption, queryValue: string|object, params: any, fn: Function): any {
+    parameterization(options: TypePluginCallbackOption, queryValue: string|object, params: any, id: string, fn: Function): any {
         let queryStr = options.returnValue || queryValue.toString();
         const varArrs = queryStr.match(/\$\{\s*([a-z0-9_\.]{1,})\s*\}/ig);
         const varResult = {
@@ -30,15 +35,29 @@ export class MysqlPlugin extends ABasePlugin {
             const varM = varStr.match(/\$\{\s*([a-z0-9_\.]{1,})\s*\}/i);
             const dataKey = varM[1];
             let dataValue = utils.getValue(params, dataKey);
-            if(typeof fn === "function") {
-                const securityValue = fn(dataValue, dataKey);
-                if(securityValue) {
-                    dataValue = securityValue;
+            if(dataValue) {
+                if(typeof fn === "function") {
+                    const securityValue = fn(dataValue, dataKey);
+                    if(securityValue) {
+                        dataValue = securityValue;
+                    }
                 }
+            } else {
+                throw new Error(`指定查询参数值不能为null或者undefined.(参数：${dataKey}, 查询过程：${id})`);
             }
             queryStr = queryStr.replace(varM[0], "?");
             varResult.values.push(dataValue);
         });
+        // ----- replace table prefix
+        const prefixMatch = queryStr.match(/\s__[a-z0-9_]{1,}__\s/ig);
+        if(prefixMatch && !utils.isEmpty(this.config?.prefix)) {
+            prefixMatch.map((prefixV) => {
+                const tableName = prefixV.replace(/\s__([a-z0-9_]{1,})__\s/i, `${this.config.prefix}$1`);
+                while(queryStr.indexOf(prefixV)>=0) {
+                    queryStr = queryStr.replace(prefixV, ` ${tableName} `);
+                }
+            });
+        }
         options.returnValue = queryStr;
         varResult.queryString = queryStr.replace(/^[\r\n\s]*/,"").replace(/[\r\n\s]*$/, "");
         return varResult;

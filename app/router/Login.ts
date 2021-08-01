@@ -20,9 +20,9 @@ export class Login {
 
     @RequestMapping("/config", "GET", true)
     async config(
-        @QueryParam() page: number,
-        @RequestCookie("token") token: string,
-        @RequestHeader("host") header: any
+        @QueryParam page: number,
+        @RequestCookie token: string,
+        @RequestHeader header: any
     ):Promise<any> {
         console.log(page);
         console.log(token);
@@ -38,7 +38,7 @@ export class Login {
         });
     }
     @RequestMapping("/test", "GET")
-    test(@QueryParam("test") str: any, @GetResponse() res: Response) {
+    test(@QueryParam str: any, @GetResponse res: Response) {
         console.log(str);
         res.cookie("token", "1230099", {
             maxAge: 10000

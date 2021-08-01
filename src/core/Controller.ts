@@ -43,7 +43,10 @@ const BeforeRequestHandle = (req: Request, res: Response, next: Function) => {
 };
 const AfterRequestHandle = (req: Request, res: Response, next: Function) => {
     pluginDestory("Request");
-}
+};
+const ExceptionHandle = (req: Request, res: Response, exception:Error) => {
+    return pluginExec(["Request"], "RequestPlugin", "exception", exception, req, res);
+};
 export const RequestMapping = (path: string, type?: TypeHttpType, async?: boolean) => {
     return (target: any, attr: string, descriptor: PropertyDescriptor) => {
         const subscribe = ((handler:Function, routePath: string, method: TypeHttpType, isAsync: boolean, attr: string) => {
@@ -73,11 +76,16 @@ export const RequestMapping = (path: string, type?: TypeHttpType, async?: boolea
                             res.send(respResultData || respResult);
                         }
                     } catch(e) {
+                        const exceptionResult: any = ExceptionHandle(req, res, e);
                         logger.error(e.stack);
-                        res.status(500).send({
-                            statusCode: 500,
-                            message: "Technical Error"
-                        });
+                        if(exceptionResult) {
+                            res.status(exceptionResult.status || 500).send(exceptionResult.responseBody || exceptionResult);
+                        } else {
+                            res.status(500).send({
+                                statusCode: 500,
+                                message: "Technical Error"
+                            });
+                        }
                     } finally {
                         AfterRequestHandle(req, res, next);
                     }

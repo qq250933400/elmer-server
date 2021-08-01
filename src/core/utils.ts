@@ -1,5 +1,6 @@
 import { getApplicationConfig } from "../config";
 import * as crypto from "crypto";
+import { md5 } from "./md5";
 
 const getType = (val: any): string => Object.prototype.toString.call(val);
 /**
@@ -238,5 +239,6 @@ export default {
     guid,
     toUri,
     toQuery,
-    setValue
+    setValue,
+    md5
 };

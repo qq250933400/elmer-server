@@ -1,6 +1,8 @@
 import { ADataEngine } from "./ADataEngine";
 import * as mysql from "mysql";
 import { Connection, Pool } from "mysql";
+import { getLogger } from "../logs";
+import { Logger } from "log4js";
 import utils from "../core/utils";
 import * as fs from 'fs';
 import { HtmlParse } from "elmer-virtual-dom";
@@ -13,7 +15,11 @@ export class Mysql extends ADataEngine {
 
     @GetGlobalObject("htmlParse")
     private htmlParse: HtmlParse;
-
+    private logger: Logger;
+    constructor() {
+        super();
+        this.logger = getLogger();
+    }
     connect(): Promise<any> {
         this.poolObj = this.createConnection();
         return new Promise<any>((resolve, reject) => {
@@ -35,7 +41,9 @@ export class Mysql extends ADataEngine {
     }
     query<T={}, P={}>(connection: Connection, queryData: P): Promise<T> {
         return new Promise<T>((resolve, reject) => {
-            connection.query((queryData as any)?.queryString, (queryData as any)?.values || [], (error, result) => {
+            const queryString = (queryData as any)?.queryString;
+            this.logger.debug("Query: " + queryString, JSON.stringify((queryData as any)?.values || {}));
+            connection.query(queryString, (queryData as any)?.values || [], (error, result) => {
                 if(error) {
                     reject(error);
                 } else {
@@ -66,9 +74,16 @@ export class Mysql extends ADataEngine {
             });
         }
     }
-    parameterization(query, params): any {
-        const parameterizationResult = pluginExec(["Request"], "MysqlPlugin", "parameterization", query, params, (value, key) => {
-            const exResult = pluginExec(["Request"], "MysqlPlugin", "parameterValidate", value);
+    /**
+     * 查询参数初始化
+     * @param query 查询语句
+     * @param params 查询参数
+     * @param id 查询过程ID
+     * @returns 
+     */
+    parameterization(query:any, params:any, id: string): any {
+        const parameterizationResult = pluginExec(["Request"], "MysqlPlugin", "parameterization", query, params, id, (value, key) => {
+            const exResult = pluginExec(["Request"], "MysqlPlugin", "parameterValidate", value, id);
             return exResult;
         });
         return parameterizationResult;

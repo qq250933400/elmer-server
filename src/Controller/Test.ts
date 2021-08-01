@@ -21,4 +21,8 @@ export class TestController {
             throw new Error("Not found information");
         }
     }
+    @RequestMapping("/uuid", "GET")
+    uuid() {
+        return utils.guid();
+    }
 }

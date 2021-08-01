@@ -39,6 +39,9 @@ export class DataModel {
         if(this.config.type === "Mysql") {
             this.dataEngine = new Mysql();
         }
+        this.dataEngine.on("onError", (err) => {
+            this.logger.error(err?.stack || err?.sqlMessage || err?.message || "Unknow error.[DataEngine]");
+        });
         this.sourceFileName = localSourceFile;
     }
     connect(): Promise<any> {
@@ -107,10 +110,13 @@ export class DataModel {
                     if((qr as any).tagName === "query" && (qr as any)?.props?.id === id) {
                         query = (qr as any).action || (qr as any).innerHTML;
                         break;
+                    } else if((qr as any).tagName === "insert" && (qr as any)?.props.id === id) {
+                        query = (qr as any).innerHTML;
+                        break;
                     }
                 }
                 if(!utils.isEmpty(query)) {
-                    const queryValue = this.dataEngine.parameterization(query, parameters);
+                    const queryValue = this.dataEngine.parameterization(query, parameters, id);
                     this.dataEngine.query(connection, queryValue)
                         .then((mysqlData) => resolve(mysqlData as any))
                         .catch((err) => {

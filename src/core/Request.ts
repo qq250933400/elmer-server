@@ -11,66 +11,42 @@ export const RequestBody = <T={}>(target: Object, methodName: string, paramIndex
     });
 };
 
-export const QueryParam = (key?: string) => {
-    return <T={}>(target: Object, methodName: string, paramIndex: number) => {
-        DefineParamDecorator(target, methodName, paramIndex, () => {
-            return (req: Request, res: Response) => {
-                if(utils.isEmpty(key)) {
-                    return utils.toUri(req.query as any);
-                } else {
-                    return utils.getUri(req.query as any, key);
-                }
-            };
-        });
-    };
+export const QueryParam = (target: Object, methodName: string, paramIndex: number) => {
+    DefineParamDecorator(target, methodName, paramIndex, () => {
+        return (req: Request, res: Response) => {
+            return utils.toUri(req.query as any);
+        };
+    });
 };
 
-export const RequestHeader = (key?: string) => {
-    return <T={}>(target: Object, methodName: string, paramIndex: number) => {
-        DefineParamDecorator(target, methodName, paramIndex, () => {
-            return (req: Request, res: Response) => {
-                const headers = req.headers || {};
-                if(utils.isEmpty(key)) {
-                    return headers;
-                } else {
-                    return headers[key];
-                }
-            };
-        });
-    };
+export const RequestHeader = (target: Object, methodName: string, paramIndex: number) => {
+    DefineParamDecorator(target, methodName, paramIndex, () => {
+        return (req: Request, res: Response) => {
+            return req.headers || {};
+        };
+    });
 };
 
-export const RequestCookie = (key?: string) => {
-    return <T={}>(target: Object, methodName: string, paramIndex: number) => {
-        DefineParamDecorator(target, methodName, paramIndex, () => {
-            return (req: Request, res: Response) => {
-                const cookieObj = req.cookies || {};
-                if(utils.isEmpty(key)) {
-                    return cookieObj;
-                } else {
-                    return cookieObj ? cookieObj[key] : null;
-                }
-            };
-        });
-    };
+export const RequestCookie = (target: Object, methodName: string, paramIndex: number) => {
+    DefineParamDecorator(target, methodName, paramIndex, () => {
+        return (req: Request, res: Response) => {
+            return req.cookies || {};;
+        };
+    });
 };
 
-export const GetRequest = (key?: string) => {
-    return <T={}>(target: Object, methodName: string, paramIndex: number) => {
-        DefineParamDecorator(target, methodName, paramIndex, () => {
-            return (req: Request, res: Response) => {
-                return req;
-            };
-        });
-    };
+export const GetRequest = <T={}>(target: Object, methodName: string, paramIndex: number) => {
+    DefineParamDecorator(target, methodName, paramIndex, () => {
+        return (req: Request, res: Response) => {
+            return req;
+        };
+    });
 };
 
-export const GetResponse = (key?: string) => {
-    return <T={}>(target: Object, methodName: string, paramIndex: number) => {
-        DefineParamDecorator(target, methodName, paramIndex, () => {
-            return (req: Request, res: Response) => {
-                return res;
-            };
-        });
-    };
+export const GetResponse = (target: Object, methodName: string, paramIndex: number) => {
+    DefineParamDecorator(target, methodName, paramIndex, () => {
+        return (req: Request, res: Response) => {
+            return res;
+        };
+    });
 };

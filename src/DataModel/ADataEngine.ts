@@ -10,7 +10,7 @@ export abstract class ADataEngine extends ADataBase {
     abstract dispose(): void;
     abstract query<T={}, P = {}>(connect: any, queryString: P): Promise<T>;
     abstract readDataSource<T={}>(fileName: string): T;
-    abstract parameterization<T={}>(queryStr: any, params: any): T;
+    abstract parameterization<T={}>(queryStr: any, params: any, id: string): T;
     on(eventName: TypeDataEngineEvent, callback: Function): void {
         this.eventListener[eventName] = callback;
     }

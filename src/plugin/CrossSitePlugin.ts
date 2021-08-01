@@ -26,6 +26,9 @@ export class CrossSitePlugin extends ABasePlugin {
             for(const rule of configData.rules) {
                 if(origin === rule.domain) {
                     let allHeaders = rule.allowHeaders || [];
+                    if(rule.withCredentials) {
+                        res.header("Access-Control-Allow-Credentials",true as any);
+                    }
                     res.header("Access-Control-Allow-Origin", origin);
                     if(rule.rules?.length > 0) {
                         for(const apiRule of rule.rules) {
@@ -39,6 +42,9 @@ export class CrossSitePlugin extends ABasePlugin {
                                     Object.keys(apiRule.headers).map((headerKey) => {
                                         res.header(headerKey, apiRule.headers[headerKey])
                                     });
+                                }
+                                if(apiRule.withCredentials) {
+                                    res.header("Access-Control-Allow-Credentials",true as any);
                                 }
                             }
                         }
