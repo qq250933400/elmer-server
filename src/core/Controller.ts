@@ -14,6 +14,11 @@ type TypeRequestMethodOptions = {
     returnValue?: any;
 };
 
+const controllerState = {
+    inerceptors: {}
+};
+
+const CONTROLLER_ROUTER_NAMESPACE = "router_namespace";
 export const ROUTER_FLAG_SSID = "ROUTER_FLAG_SSID_9728e438-d856-41ca-b3d3-11812048";
 export const ROUTER_KEY = "9728e438-d856-41ca-b3d3-11812048";
 export const CONTROLLER_INTERCEPTOR = "CONTROLLER_INTERCEPTOR_9728e438-d856-41ca-b3d3-11812048";
@@ -23,7 +28,7 @@ export type TypeHttpType = "GET" | "POST" | "PUT" | "DELETE" | "OPTIONS";
 export const Controller = (namespace: string) => {
     return (target: new(...args: any[]) => any) => {
         DefineDecorator(() => {
-            Reflect.defineMetadata("router_namespace", namespace, target);
+            Reflect.defineMetadata(CONTROLLER_ROUTER_NAMESPACE, namespace, target);
             Reflect.defineMetadata(ROUTER_KEY, ROUTER_FLAG_SSID, target);
             Reflect.defineMetadata(DECORATOR_MODEL_TYPE, "Controller", target);
             target.prototype.namespace = namespace;
@@ -46,10 +51,18 @@ const getRequestParams = (target: any,name: string, req: Request, res: Response)
     }
 }
 const BeforeRequestHandle = (req: Request, res: Response, next: Function, options: TypeRequestMethodOptions): boolean => {
-    const interaptor = Reflect.getMetadata(CONTROLLER_INTERCEPTOR, options.controller);
-    if(typeof interaptor === "function") {
-        const params = getRequestParams(options.controller,options.attribute, req, res) || [];
-        const returnValue = interaptor.apply(options.controller, params);
+    const saveInerceptors = Reflect.getMetadata(CONTROLLER_INTERCEPTOR, options.controller);
+    if(utils.isArray(saveInerceptors)) {
+        let returnValue = null;
+        for(const iptor of saveInerceptors) {
+            const { callback, target, attrKey } = iptor as any;
+            const params: any[] = getRequestParams(target,attrKey, req, res) || [];
+            const iptorResult = callback.apply(target, params);
+            if(iptorResult) {
+                returnValue = iptorResult;
+                break;
+            }
+        }
         if(!returnValue) {
             return true;
         } else {
@@ -91,6 +104,7 @@ export const RequestMapping = (path: string, type?: TypeHttpType, async?: boolea
                                 })
                                 .catch((err) => {
                                     const respResultData = pluginExec<TypeRequestProvider>(["Request"], "RequestPlugin", "beforSend", err);
+                                    logger.error(err.stack || err.message);
                                     res.status(500);
                                     res.send(respResultData || err);
                                 });
@@ -160,8 +174,11 @@ export const RequestMapping = (path: string, type?: TypeHttpType, async?: boolea
 };
 
 export const AddInterceptors = (Target: any, attr: string, descriptor: PropertyDescriptor): void => {
-    const inerceptor = Reflect.getMetadata(CONTROLLER_INTERCEPTOR, Target);
-    if(!inerceptor) {
-        Reflect.defineMetadata(CONTROLLER_INTERCEPTOR, descriptor.value, Target);
-    }
+    const saveInerceptors = Reflect.getMetadata(CONTROLLER_INTERCEPTOR, Target) || [];
+    saveInerceptors.push({
+        attrKey: attr,
+        callback: descriptor.value,
+        target: Target
+    });
+    Reflect.defineMetadata(CONTROLLER_INTERCEPTOR, saveInerceptors, Target);
 }

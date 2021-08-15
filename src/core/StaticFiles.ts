@@ -10,7 +10,7 @@ import * as fs from "fs";
 import { md5 } from "./md5";
 import { Logger } from "log4js";
 
-type TypeUploadInfo = {
+export type TypeUploadInfo = {
     fileName: string;
     fileSize: number;
     fileBlockSize: number;
@@ -21,6 +21,8 @@ type TypeUploadInfo = {
     fileAction: "Connect" | "Data" | "Complete",
     lastModified: number;
     fileTempId?: string;
+    filePath?: string;
+    fileBlockIndex: number;
 }
 
 @Service
@@ -68,8 +70,8 @@ export class StaticFiles {
             const leftPathArr = leftPath.split("/");
             let checkPathValue = rootPathValue;
             for(const tempPath of leftPathArr) {
-                const checkTempPath = [checkPathValue, tempPath].join("/");
-                console.log(checkTempPath);
+                let checkTempPath = [checkPathValue, tempPath].join("/");
+                checkTempPath = checkTempPath.replace(/\/\//g, "/");
                 if(!fs.existsSync(checkTempPath)) {
                     fs.mkdirSync(checkTempPath);
                 }
@@ -96,6 +98,8 @@ export class StaticFiles {
             lastModified: headers["lastmodified"] as any,
             fileIndex: headers["file_index"] as any,
             fileBlockSize: headers["file_block_size"] as any,
+            filePath: headers["file_path"] as any,
+            fileBlockIndex: headers["file_block_index"] as any
         };
     }
     readUploadFile(req: Request, fn): Promise<any> {
@@ -105,17 +109,19 @@ export class StaticFiles {
             if(info.fileAction === "Connect") {
                 const tempId = !utils.isEmpty(info.fileHash) ? md5(info.fileHash) : "file_" + utils.guid();
                 const infoName = tempId + ".info";
-                const blockSize = 10240;
-                const saveInfo = {
-                    ...info,
-                    updateData: [],
-                    blockSize
-                };
+               
                 const saveInfoFile = path.resolve(this.serverConfig.temp, infoName);
                 const preCheckResult = typeof fn === "function" && fn(info.fileAction, {
                     ...info,
                 });
+                const blockSize = preCheckResult?.blockSize > 1000 ? preCheckResult?.blockSize : 100000;
+                const saveInfo = {
+                    ...info,
+                    updateData: [],
+                    fileBlockSize: blockSize
+                };
                 if(!preCheckResult) {
+                    
                     fs.writeFileSync(saveInfoFile, JSON.stringify(saveInfo, null, 4), {
                         encoding: "utf-8"
                     });
@@ -125,11 +131,15 @@ export class StaticFiles {
                         fileTempId: tempId
                     });
                 } else {
-                    resolve(preCheckResult);
+                    resolve({
+                        ...preCheckResult,
+                        blockSize,
+                        fileTempId: tempId
+                    });
                 }
             } else if(info.fileAction === "Data") {
-                const { fileIndex } = info;
-                const tempFileName = `./${fileId}_${fileIndex}.temp`;
+                const { fileBlockIndex } = info;
+                const tempFileName = `./${fileId}_${fileBlockIndex}.temp`;
                 const tmpSaveFileName = path.resolve(this.serverConfig.temp, tempFileName);
                 const fStream = fs.createWriteStream(tmpSaveFileName);
                 req.pipe(fStream, {
@@ -148,19 +158,20 @@ export class StaticFiles {
                     });
                 });
             } else if(info.fileAction === "Complete") {
-                const tempId = !utils.isEmpty(info.fileHash) ? md5(info.fileHash) : "file_" + utils.guid();
-                const infoName = tempId + ".info";
+                const tempId = fileId || md5(info.fileHash);
+                const infoName = path.resolve(this.serverConfig.temp, `./${tempId}.info`);
+                const tempInfo = this.readUploadTempInfo(infoName);
                 const fileSize = info.fileSize;
-                const blockSize = info.fileBlockSize;
+                const blockSize = tempInfo.fileBlockSize;
                 const prefCheck = fn("Complete", info);
                 const currentDate = (new Date()).format("YYYY-MM-DD");
                 const saveFileName = prefCheck?.fileName || `./${currentDate}/${info.fileName}`;
-                const saveAbsoluteFile = path.resolve(this.serverConfig.uploadPath, saveFileName);
+                const saveAbsoluteFile = /^\./.test(saveFileName) ? path.resolve(this.serverConfig.uploadPath, saveFileName) : path.resolve(this.serverConfig.uploadPath, "." + saveFileName);
                 const savePath = this.getPath(saveAbsoluteFile);
                 const blockCount = Math.ceil(fileSize / blockSize);
-
-                this.checkDir(savePath, this.serverConfig.uploadPath);
                 try{
+                    this.logger.info("上传文件保存到：", savePath);
+                    this.checkDir(savePath, this.serverConfig.uploadPath);
                     for(let i=0;i<blockCount;i++) {
                         const tmpFile = `${tempId}_${i}.temp`;
                         const tmpFileName = path.resolve(this.serverConfig.temp, tmpFile);
@@ -173,7 +184,7 @@ export class StaticFiles {
                         });
                         fs.unlinkSync(tmpFileName); // 保存成功删除临时文件
                     }
-                    fs.unlinkSync(path.resolve(this.serverConfig.temp,infoName)); //删除缓存信息文件
+                    fs.unlinkSync(infoName); //删除缓存信息文件
                     const finalResult =  fn("AfterSave", {
                         ...info,
                         saveFileName
@@ -186,8 +197,17 @@ export class StaticFiles {
                     });
                 } catch(e) {
                     this.logger.error("保存文件失败，部分临时文件丢失: " , e.stack);
+                    console.error(e.stack);
+                    reject({
+                        statusCode: "UF_505",
+                        message: "文件保存失败"
+                    })
                 }
             }
         });
+    }
+    private readUploadTempInfo(fileName: string): TypeUploadInfo {
+        const txtInfo = fs.readFileSync(fileName, { encoding: "utf-8" });
+        return JSON.parse(txtInfo);
     }
 }
