@@ -12,6 +12,7 @@ import LogConfigSchema from "./config.schema.log";
 import CrossSiteConfigSchema from "./config.schema.crossSite";
 import utils from "../core/utils";
 import { IConfigApplication } from "./IConfigApplication";
+import { IConfigServer } from "./IConfigServer";
 
 const readConfigData = (fileName: string):any => {
     const txt = fs.readFileSync(fileName, "utf8");
@@ -58,7 +59,8 @@ export const Config = (fileName: string, name?: string, schema?: any) => {
 };
 
 export const getApplicationConfig = ():IConfigApplication => {
-    return GlobalStore.getConfig("Application");
+    const appConfig = GlobalStore.getConfig("Application") as IConfigApplication;
+    return appConfig;
 };
 
 export const DBConfig = () => {
@@ -88,7 +90,7 @@ export const LogConfig = () => {
     }
 };
 
-export const GetConfig = (Key: string, name?: string) => {
+export const GetConfig = (Key?: string, name?: string) => {
     return (Target: any, attr: string) => {
         Object.defineProperty(Target, attr, {
             configurable: false,
@@ -102,4 +104,27 @@ export const GetConfig = (Key: string, name?: string) => {
             }
         });
     }
+}
+
+export const GetServerConfig = (Target: any, attr: string) => {
+    Object.defineProperty(Target, attr, {
+        configurable: false,
+        enumerable: true,
+        get: () => {
+            const config:IConfigServer = (getApplicationConfig().Server || {}) as any;
+            if(!utils.isEmpty(config.staticPath)) {
+                config.staticPath = path.resolve(process.cwd(), config.staticPath);
+            }
+            if(!utils.isEmpty(config.uploadPath)) {
+                config.uploadPath = path.resolve(process.cwd(), config.uploadPath);
+            }
+            if(!utils.isEmpty(config.temp)) {
+                config.temp = path.resolve(process.cwd(), config.temp);
+            }
+            return config;
+        },
+        set: () => {
+            throw new Error("Can not override db config.");
+        }
+    });
 }

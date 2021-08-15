@@ -1,13 +1,40 @@
-import { GetConfig } from "../config";
+import { GetConfig, GetServerConfig } from "../config";
 import { Service } from "elmer-common";
+import { IConfigServer } from "../config/IConfigServer";
+import { Request } from "express";
+import { UploadStream } from "./UploadStream";
+import { GetLogger } from "../logs";
 import utils from "./utils";
 import * as path from "path";
 import * as fs from "fs";
+import { md5 } from "./md5";
+import { Logger } from "log4js";
+
+type TypeUploadInfo = {
+    fileName: string;
+    fileSize: number;
+    fileBlockSize: number;
+    fileHash: string;
+    fileType: string;
+    fileId: string;
+    fileIndex: number;
+    fileAction: "Connect" | "Data" | "Complete",
+    lastModified: number;
+    fileTempId?: string;
+}
 
 @Service
 export class StaticFiles {
+
     @GetConfig("staticPath")
     private path: string;
+
+    @GetServerConfig
+    private serverConfig: IConfigServer;
+
+    @GetLogger()
+    private logger: Logger;
+
     private rootPath: string;
     constructor() {
         if(!utils.isEmpty(this.path)) {
@@ -24,5 +51,143 @@ export class StaticFiles {
         } else {
             throw new Error("File not found");
         }
+    }
+    /**
+     * 检查目录，不存在自动创建
+     * @param path 检查地址
+     * @param rootPath 设置检查根目录，为安全设置将创建目录限制在指定路径，不允许全局创建
+     */
+    checkDir(checkPath: string, rootPath: string): void {
+        const rootStr = checkPath.substr(0, rootPath.length);
+        const rootStrValue = rootStr.replace(/\\/g, "/");
+        const rootPathValue = rootPath.replace(/\\/g, "/");
+        if(rootStrValue !== rootPathValue) {
+            throw new Error("只允许在安全目录创建");
+        } else {
+            const leftPath = checkPath.substr(rootPath.length).replace(/\\/g, "/");
+            const leftPathArr = leftPath.split("/");
+            let checkPathValue = rootPathValue;
+            for(const tempPath of leftPathArr) {
+                const checkTempPath = [checkPathValue, tempPath].join("/");
+                console.log(checkTempPath);
+                if(!fs.existsSync(checkTempPath)) {
+                    fs.mkdirSync(checkTempPath);
+                }
+                checkPathValue = checkTempPath;
+            }
+        }
+    }
+    getPath(fileName: string): string {
+        const tmpFileName = fileName.replace(/\\/g, "/");
+        const lastIndex = tmpFileName.lastIndexOf("/");
+        return tmpFileName.substring(0, lastIndex);
+    }
+    readUploadInfo(req: Request): TypeUploadInfo {
+        const headers = req.headers || {};
+        const name = headers["file_name"] as string;
+        return {
+            fileName: !utils.isEmpty(name) ? decodeURIComponent(name) : "",
+            fileSize: headers["file_size"] as any,
+            fileType: headers["file_type"] as string,
+            fileHash: headers["file_hash"] as string,
+            fileAction: headers["file_action"] as any,
+            fileId: headers["file_id"] as any,
+            fileTempId: headers["file_temp_id"] as any,
+            lastModified: headers["lastmodified"] as any,
+            fileIndex: headers["file_index"] as any,
+            fileBlockSize: headers["file_block_size"] as any,
+        };
+    }
+    readUploadFile(req: Request, fn): Promise<any> {
+        return new Promise<any>((resolve, reject) => {
+            const info = this.readUploadInfo(req);
+            const fileId: string = info.fileTempId;
+            if(info.fileAction === "Connect") {
+                const tempId = !utils.isEmpty(info.fileHash) ? md5(info.fileHash) : "file_" + utils.guid();
+                const infoName = tempId + ".info";
+                const blockSize = 10240;
+                const saveInfo = {
+                    ...info,
+                    updateData: [],
+                    blockSize
+                };
+                const saveInfoFile = path.resolve(this.serverConfig.temp, infoName);
+                const preCheckResult = typeof fn === "function" && fn(info.fileAction, {
+                    ...info,
+                });
+                if(!preCheckResult) {
+                    fs.writeFileSync(saveInfoFile, JSON.stringify(saveInfo, null, 4), {
+                        encoding: "utf-8"
+                    });
+                    resolve({
+                        statusCode: 200,
+                        blockSize,
+                        fileTempId: tempId
+                    });
+                } else {
+                    resolve(preCheckResult);
+                }
+            } else if(info.fileAction === "Data") {
+                const { fileIndex } = info;
+                const tempFileName = `./${fileId}_${fileIndex}.temp`;
+                const tmpSaveFileName = path.resolve(this.serverConfig.temp, tempFileName);
+                const fStream = fs.createWriteStream(tmpSaveFileName);
+                req.pipe(fStream, {
+                    end: true
+                }).on("finish", () => {
+                    fStream.close();
+                    resolve({
+                        statusCode: 200,
+                        message: "临时存储成功"
+                    });
+                }).on("error", (err) => {
+                    this.logger.error(err.stack);
+                    reject({
+                        statusCode: "UF_501",
+                        message: "写入数据失败"
+                    });
+                });
+            } else if(info.fileAction === "Complete") {
+                const tempId = !utils.isEmpty(info.fileHash) ? md5(info.fileHash) : "file_" + utils.guid();
+                const infoName = tempId + ".info";
+                const fileSize = info.fileSize;
+                const blockSize = info.fileBlockSize;
+                const prefCheck = fn("Complete", info);
+                const currentDate = (new Date()).format("YYYY-MM-DD");
+                const saveFileName = prefCheck?.fileName || `./${currentDate}/${info.fileName}`;
+                const saveAbsoluteFile = path.resolve(this.serverConfig.uploadPath, saveFileName);
+                const savePath = this.getPath(saveAbsoluteFile);
+                const blockCount = Math.ceil(fileSize / blockSize);
+
+                this.checkDir(savePath, this.serverConfig.uploadPath);
+                try{
+                    for(let i=0;i<blockCount;i++) {
+                        const tmpFile = `${tempId}_${i}.temp`;
+                        const tmpFileName = path.resolve(this.serverConfig.temp, tmpFile);
+                        const blockData = fs.readFileSync(tmpFileName, {
+                            encoding: "binary"
+                        });
+                        fs.writeFileSync(saveAbsoluteFile, blockData,{
+                            encoding: "binary",
+                            flag: "a+"
+                        });
+                        fs.unlinkSync(tmpFileName); // 保存成功删除临时文件
+                    }
+                    fs.unlinkSync(path.resolve(this.serverConfig.temp,infoName)); //删除缓存信息文件
+                    const finalResult =  fn("AfterSave", {
+                        ...info,
+                        saveFileName
+                    });
+                    resolve({
+                        statusCode: 200,
+                        message: "文件上传成功",
+                        url: saveFileName,
+                        ...(finalResult || {})
+                    });
+                } catch(e) {
+                    this.logger.error("保存文件失败，部分临时文件丢失: " , e.stack);
+                }
+            }
+        });
     }
 }

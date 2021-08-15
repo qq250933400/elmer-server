@@ -1,4 +1,4 @@
-import { Controller, RequestMapping, RequestBody, utils,  } from "../../src";
+import { Controller, RequestMapping, RequestBody, utils, AddInterceptors } from "../../src";
 
 type TypeRequestBody = {
     text: string;
@@ -20,4 +20,17 @@ export class Api {
         return utils.aseEncode(body.text);
     }
 
+    @AddInterceptors
+    beforeRequest() {
+        return {
+            statusCode: 401,
+            UnAuth: true
+        }
+    }
+
+    @RequestMapping("/upload", "POST")
+    uploadTest() {
+        
+    }
 }
+console.log("---++--")

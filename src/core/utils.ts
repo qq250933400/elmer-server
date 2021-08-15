@@ -1,5 +1,6 @@
 import { getApplicationConfig } from "../config";
 import * as crypto from "crypto";
+import * as fs from 'fs';
 import { md5 } from "./md5";
 
 const getType = (val: any): string => Object.prototype.toString.call(val);
@@ -219,6 +220,44 @@ const setValue = (data:object, key:string, value:any, fn?: Function): boolean =>
     }
     return isUpdate;
 };
+
+const fildMD5 = (fileName: string): Promise<string> => {
+    return new Promise<string>((resolve, reject) => {
+        if(fs.existsSync(fileName) && fs.lstatSync(fileName).isFile()) {
+            const fReadStream = fs.createReadStream(fileName);
+            const fHash = crypto.createHash("sha256");
+            fReadStream.on('data', function (d) {
+                fHash.update(d);
+            });
+            fReadStream.on('end', function () {
+                const md5 = fHash.digest('hex');
+                resolve(md5);
+            });
+            fReadStream.on("error", (err) => {
+                reject({
+                    statusCode: "RF_501",
+                    message: "读取文件错误"
+                });
+            })
+        } else {
+            reject({
+                statusCode: "RF_500",
+                message: "文件不存在"
+            });
+        }
+    });
+};
+const fildMD5Async = (fileName: string): string|null|undefined => {
+    if(fs.existsSync(fileName) && fs.lstatSync(fileName).isFile()) {
+        const fHash = crypto.createHash("sha256");
+        const buffer = fs.readFileSync(fileName, {
+            encoding: "binary"
+        });
+        fHash.update(buffer);
+        return fHash.digest("hex");
+    }
+}
+
 export default {
     aseEncode,
     aseDecode,
@@ -237,6 +276,8 @@ export default {
     getUri,
     getValue,
     guid,
+    fildMD5,
+    fildMD5Async,
     toUri,
     toQuery,
     setValue,

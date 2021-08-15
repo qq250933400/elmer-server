@@ -10,9 +10,9 @@
         "checkJs": false,
         "module": "commonjs",
         "removeComments": true,
-        "target": "es2016",
+        "target": "ES2015",
         "lib": [
-            "es2015",
+            "ES2015",
             "dom",
             "dom.iterable"
         ],

@@ -1,9 +1,5 @@
-import * as express from "express";
-import { Login } from "./router/Login";
+import "./router";
 import { App } from "./App";
-
-const app = express();
-const port = 8000;
 
 // app.listen(port);
 

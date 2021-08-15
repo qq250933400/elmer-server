@@ -1,19 +1,23 @@
+import "./router";
 import { BootApplication, Config, utils } from "../src";
 import { UsePlugins, ABasePlugin, TypePluginType } from "../src/plugin";
 import { Autowired } from "elmer-common";
 import { TestService } from "./TestService";
-import "./router";
 
 class AdminRequestPlugin extends ABasePlugin {
     init(): void {
         this.register("RequestPlugin", {
             beforSend: (lastData, data) => {
                 console.log("AdminRequestPlugin", lastData, data);
-                lastData.returnValue = data
-                return {
-                    statusCode: 200,
-                    message: "Success",
-                    data
+                lastData.returnValue = data;
+                if(data.statusCode === 200) {
+                    return data;
+                } else {
+                    return {
+                        statusCode: 200,
+                        message: "Success",
+                        data
+                    };
                 }
             }
         });

@@ -8,8 +8,15 @@ import { pluginExec, pluginDestory } from "../plugin/PluginExec";
 import { TypeRequestProvider } from "../plugin/ABasePlugin";
 import utils from './utils';
 
+type TypeRequestMethodOptions = {
+    controller: any;
+    attribute: string;
+    returnValue?: any;
+};
+
 export const ROUTER_FLAG_SSID = "ROUTER_FLAG_SSID_9728e438-d856-41ca-b3d3-11812048";
 export const ROUTER_KEY = "9728e438-d856-41ca-b3d3-11812048";
+export const CONTROLLER_INTERCEPTOR = "CONTROLLER_INTERCEPTOR_9728e438-d856-41ca-b3d3-11812048";
 
 export type TypeHttpType = "GET" | "POST" | "PUT" | "DELETE" | "OPTIONS";
 
@@ -38,10 +45,22 @@ const getRequestParams = (target: any,name: string, req: Request, res: Response)
         return args;
     }
 }
-const BeforeRequestHandle = (req: Request, res: Response, next: Function) => {
-    
+const BeforeRequestHandle = (req: Request, res: Response, next: Function, options: TypeRequestMethodOptions): boolean => {
+    const interaptor = Reflect.getMetadata(CONTROLLER_INTERCEPTOR, options.controller);
+    if(typeof interaptor === "function") {
+        const params = getRequestParams(options.controller,options.attribute, req, res) || [];
+        const returnValue = interaptor.apply(options.controller, params);
+        if(!returnValue) {
+            return true;
+        } else {
+            options.returnValue = returnValue;
+            return false;
+        }
+    } else {
+        return true;
+    }
 };
-const AfterRequestHandle = (req: Request, res: Response, next: Function) => {
+const AfterRequestHandle = (req: Request, res: Response, next: Function, options: TypeRequestMethodOptions) => {
     pluginDestory("Request");
 };
 const ExceptionHandle = (req: Request, res: Response, exception:Error) => {
@@ -58,22 +77,32 @@ export const RequestMapping = (path: string, type?: TypeHttpType, async?: boolea
                 const mTypeCallback = async function(req: Request, res: Response, next: Function) {
                     logger.info(`[${mType}] ` + req.url);
                     try{
-                        BeforeRequestHandle(req, res, next)
-                        const paramer: any[] = getRequestParams(target,attr, req, res) || [];
-                        const respResult = handler.apply(owner, paramer);
-                        if(utils.isPromise(respResult)) {
-                            respResult.then((respData) => {
-                                const respResultData = pluginExec<TypeRequestProvider>(["Request"], "RequestPlugin", "beforSend", respData);
-                                res.send(respResultData || respData);
-                            })
-                            .catch((err) => {
-                                const respResultData = pluginExec<TypeRequestProvider>(["Request"], "RequestPlugin", "beforSend", err);
-                                res.status(500);
-                                res.send(respResultData || err);
-                            });
+                        const beforeOptions: TypeRequestMethodOptions = {
+                            controller: target,
+                            attribute: attr
+                        };
+                        if(BeforeRequestHandle(req, res, next, beforeOptions)) {
+                            const paramer: any[] = getRequestParams(target,attr, req, res) || [];
+                            const respResult = handler.apply(owner, paramer);
+                            if(utils.isPromise(respResult)) {
+                                respResult.then((respData) => {
+                                    const respResultData = pluginExec<TypeRequestProvider>(["Request"], "RequestPlugin", "beforSend", respData);
+                                    res.send(respResultData || respData);
+                                })
+                                .catch((err) => {
+                                    const respResultData = pluginExec<TypeRequestProvider>(["Request"], "RequestPlugin", "beforSend", err);
+                                    res.status(500);
+                                    res.send(respResultData || err);
+                                });
+                            } else {
+                                const respResultData = pluginExec<TypeRequestProvider>(["Request"], "RequestPlugin", "beforSend", respResult);
+                                res.send(respResultData || respResult);
+                            }
                         } else {
-                            const respResultData = pluginExec<TypeRequestProvider>(["Request"], "RequestPlugin", "beforSend", respResult);
-                            res.send(respResultData || respResult);
+                            if(beforeOptions.returnValue?.statusCode && !/^200$/.test(beforeOptions.returnValue?.statusCode)) {
+                                res.status(500);
+                            }
+                            res.send(beforeOptions.returnValue);
                         }
                     } catch(e) {
                         const exceptionResult: any = ExceptionHandle(req, res, e);
@@ -87,7 +116,10 @@ export const RequestMapping = (path: string, type?: TypeHttpType, async?: boolea
                             });
                         }
                     } finally {
-                        AfterRequestHandle(req, res, next);
+                        AfterRequestHandle(req, res, next, {
+                            controller: target,
+                            attribute: attr
+                        });
                     }
                 };
                 logger.info(`[INIT_${mType}] `+ mPath);
@@ -125,4 +157,11 @@ export const RequestMapping = (path: string, type?: TypeHttpType, async?: boolea
             }
         });
     };
+};
+
+export const AddInterceptors = (Target: any, attr: string, descriptor: PropertyDescriptor): void => {
+    const inerceptor = Reflect.getMetadata(CONTROLLER_INTERCEPTOR, Target);
+    if(!inerceptor) {
+        Reflect.defineMetadata(CONTROLLER_INTERCEPTOR, descriptor.value, Target);
+    }
 }

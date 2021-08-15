@@ -4,4 +4,6 @@ export interface IConfigServer {
     host: string;
     publicKey: string;
     staticPath: string;
+    uploadPath: string;
+    temp: string;
 }
