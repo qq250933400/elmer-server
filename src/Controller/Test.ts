@@ -1,4 +1,4 @@
-import { RequestMapping, Controller } from "../core";
+import { RequestMapping, Controller, RequestBody } from "../core";
 import { Autowired } from "elmer-common";
 import utils from "../core/utils";
 import { StaticFiles } from "../core/StaticFiles";
@@ -24,5 +24,19 @@ export class TestController {
     @RequestMapping("/uuid", "GET")
     uuid() {
         return utils.guid();
+    }
+    @RequestMapping("/encrype", "POST")
+    encrypt(@RequestBody body: any) {
+        if(!utils.isEmpty(body.text)) {
+            return {
+                statusCode: 200,
+                responseBody: utils.aseEncode(body.text)
+            };
+        } else {
+            return {
+                statusCode: 500,
+                message: "No encode text found"
+            };
+        }
     }
 }
