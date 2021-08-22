@@ -89,13 +89,15 @@ export class Mysql extends ADataEngine {
         return parameterizationResult;
     }
     private createConnection(): Pool {
-        return mysql.createPool({
+        const loginInfo = {
             connectionLimit: 5,
             host: this.config.host,
             port: this.config.port,
             password: !utils.isEmpty(this.config.password) ? utils.aseDecode(this.config.password) : "",
             database: this.config.dataBase,
             user: this.config.user
-        });
+        };
+        this.logger.debug(JSON.stringify(loginInfo));
+        return mysql.createPool(loginInfo);
     }
 }
