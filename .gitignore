@@ -4,3 +4,5 @@
 /types/
 /app/
 /stub/
+/app/config.yml
+/app/corssSite.json
