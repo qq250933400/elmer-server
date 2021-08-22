@@ -65,7 +65,8 @@ export class Schema extends ASchema{
                                     this.runSchema[attrKey] = useSchema.dataType[attrKey];
                                 });
                             }
-                            this.doValidate(data[attrKey], useSchema, schemaName, keyPathArray);
+                            const shouldValidate = useSchema.isRequired || !utils.isEmpty(data[attrKey]);
+                            shouldValidate && this.doValidate(data[attrKey], useSchema, schemaName, keyPathArray);
                         } else {
                             throw new Error(`配置${name}参数属性${keyPath}引用规则(${schemaName})不存在`);
                         }

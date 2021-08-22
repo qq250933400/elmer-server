@@ -9,7 +9,8 @@ export default {
             isRequired: false
         },
         Log: {
-            type: "#Log"
+            type: "#Log",
+            isRequired: true
         },
         Email: {
             type: "#Email"
