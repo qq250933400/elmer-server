@@ -16,6 +16,11 @@ export default {
         accessKey: {
             type: "String",
             isRequired: true
+        },
+        secure: {
+            type: "Boolean",
+            isRequired: true,
+            defaultValue: false
         }
     },
     dataType: {

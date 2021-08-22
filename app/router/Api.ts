@@ -32,7 +32,7 @@ export class Api {
         return this.email.send({
             toUsers: ["250933400@qq.com"],
             text: "尊敬的用户您好，你的账号已开通。",
-            subject: "账号管理"
+            subject: "会员注册"
         });
     }
 

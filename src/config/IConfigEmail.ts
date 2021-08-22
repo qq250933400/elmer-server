@@ -4,4 +4,5 @@ export interface IConfigEmail {
     imap: string;
     user: string;
     accessKey: string;
+    secure: boolean;
 }

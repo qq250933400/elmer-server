@@ -46,9 +46,12 @@ export class Schema extends ASchema{
                 const type = config?.type;
                 const keyPathArray = [...prefixKey, attrKey];
                 const keyPath = [...prefixKey, attrKey].join(".");
+                const dataValue = !utils.isEmpty(data[attrKey]) ? data[attrKey] : (
+                    !utils.isEmpty(config.defaultValue) ? config.defaultValue : config.default
+                );
                 let importRules = false;
-                if(isRequired && data && (undefined === data[attrKey] || null === data[attrKey])) {
-                    data[attrKey] = config.default;
+                if(isRequired && utils.isEmpty(dataValue)) {
+                    data[attrKey] = dataValue;
                     throw new Error(`配置${name}数据属性${keyPath}是必须设置参数不能为空。`);
                 }
                 if(data) {
