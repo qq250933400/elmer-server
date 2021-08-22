@@ -10,6 +10,9 @@ export default {
         },
         Log: {
             type: "#Log"
+        },
+        Email: {
+            type: "#Email"
         }
     }
 };

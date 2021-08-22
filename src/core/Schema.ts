@@ -15,7 +15,9 @@ abstract class ASchema {
 @Service
 export class Schema extends ASchema{
     private schemaConfig: any = {};
+    private runSchema: any = {};
     validate:ISchemaValidate = (data: any, schema?: any, name?: string): void => {
+        this.runSchema = {};
         if(utils.isObject(schema)) {
             // 验证指定数据schema
             this.doValidate(data, schema, name || "Unknow", []);
@@ -31,6 +33,9 @@ export class Schema extends ASchema{
         if(schema) {
             this.schemaConfig[name] = schema;
         }
+    }
+    getSchemas() {
+        return this.schemaConfig;
     }
     private doValidate(data: any, schema: any, name?: string, prefixKey?: string[]): boolean {
         const properties = schema?.properties;
@@ -49,9 +54,15 @@ export class Schema extends ASchema{
                 if(data) {
                     if(/^#/.test(type)) {
                         const schemaName = type.replace(/^#/, "");
-                        if(this.schemaConfig[schemaName]) {
+                        const useSchema = this.schemaConfig[schemaName] || this.runSchema[schemaName];
+                        if(useSchema) {
                             importRules = true;
-                            this.doValidate(data[attrKey], this.schemaConfig[schemaName], schemaName, keyPathArray);
+                            if(useSchema.dataType) {
+                                Object.keys(useSchema.dataType).map((attrKey: string) => {
+                                    this.runSchema[attrKey] = useSchema.dataType[attrKey];
+                                });
+                            }
+                            this.doValidate(data[attrKey], useSchema, schemaName, keyPathArray);
                         } else {
                             throw new Error(`配置${name}参数属性${keyPath}引用规则(${schemaName})不存在`);
                         }
@@ -88,7 +99,7 @@ export class Schema extends ASchema{
     private checkArrayTypes(data: any, type: string, keyPath: string, name: string, prefixArray: string[]):any {
         const typeRegExp = /^Array\<([#0-9a-zA-Z]{1,})\>$/;
         const dataMatch = type.match(typeRegExp);
-        const declareTypes = this.schemaConfig[name]?.declareTypes || {};
+        const declareTypes = this.schemaConfig[name]?.dataType || {};
         if(utils.isArray(data)) {
             if(dataMatch) {
                 const arrayItemType = dataMatch[1];

@@ -16,3 +16,9 @@ DB:
   sourcePath: "./stub/dataSource"
 Log:
   level: debug
+Email:
+  pop3: pop.163.com
+  smtp: smtp.163.com
+  imap: imap.163.com
+  user: "elmer_mo@163.com"
+  accessKey: RLYWSLIXMGDHWGMO

@@ -4,10 +4,14 @@
     "description": "",
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",
+    "bin": {
+        "init": "node ./lib/cmd.js init"
+    },
     "scripts": {
         "start": "ts-node ./app/index.ts",
         "dev": "nodemon ./app/index.ts",
-        "test": "jest"
+        "test": "jest",
+        "cmd": "ts-node ./src/cmd.ts init"
     },
     "author": "",
     "license": "ISC",
@@ -40,6 +44,7 @@
         "express": "^4.17.1",
         "log4js": "^6.3.0",
         "mysql": "^2.18.1",
+        "nodemailer": "^6.6.3",
         "reflect-metadata": "^0.1.13",
         "yaml": "^1.10.2"
     },
@@ -48,6 +53,7 @@
         "@types/express": "^4.17.11",
         "@types/jest": "^26.0.23",
         "@types/mysql": "^2.15.18",
+        "@types/nodemailer": "^6.4.4",
         "babel-core": "^6.26.3",
         "babel-jest": "^26.6.3",
         "babel-preset-env": "^1.7.0",

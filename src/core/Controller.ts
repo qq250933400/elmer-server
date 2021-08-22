@@ -14,10 +14,6 @@ type TypeRequestMethodOptions = {
     returnValue?: any;
 };
 
-const controllerState = {
-    inerceptors: {}
-};
-
 const CONTROLLER_ROUTER_NAMESPACE = "router_namespace";
 export const ROUTER_FLAG_SSID = "ROUTER_FLAG_SSID_9728e438-d856-41ca-b3d3-11812048";
 export const ROUTER_KEY = "9728e438-d856-41ca-b3d3-11812048";

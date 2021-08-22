@@ -14,7 +14,7 @@ export default {
             }
         }
     },
-    declareTypes: {
+    dataType: {
         crossSiteRule: {
             type: "Object",
             properties: {

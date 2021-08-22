@@ -10,6 +10,7 @@ import DBConfigSchema from './config.schema.db';
 import ServerConfigSchema from './config.schema.server';
 import LogConfigSchema from "./config.schema.log";
 import CrossSiteConfigSchema from "./config.schema.crossSite";
+import EmailConfigSchema from "./config.schema.email";
 import utils from "../core/utils";
 import { IConfigApplication } from "./IConfigApplication";
 import { IConfigServer } from "./IConfigServer";
@@ -21,6 +22,23 @@ const readConfigData = (fileName: string):any => {
     } else if(/\.json/i.test(fileName)) {
         return JSON.parse(txt);
     }
+};
+export const initConfigSchema = () => {
+    const schemaObj = GlobalStore.getService<Schema>(Schema);
+    schemaObj.addSchema("Application", ApplicationConfigSchema);
+    schemaObj.addSchema("DB", DBConfigSchema);
+    schemaObj.addSchema("Server", ServerConfigSchema);
+    schemaObj.addSchema("Log", LogConfigSchema);
+    schemaObj.addSchema("CrossSite", CrossSiteConfigSchema);
+    schemaObj.addSchema("Email", EmailConfigSchema);
+    return {
+        Application: ApplicationConfigSchema,
+        DB: DBConfigSchema,
+        Server: ServerConfigSchema,
+        Log: LogConfigSchema,
+        CrossSite: CrossSiteConfigSchema,
+        Email: EmailConfigSchema
+    };
 };
 /**
  * 读取配置，支持yml,json两种数据格式
@@ -37,11 +55,6 @@ export const Config = (fileName: string, name?: string, schema?: any) => {
                 const configData = readConfigData(localFile);
                 const saveName = name || "Application";
                 const schemaObj = GlobalStore.getService<Schema>(Schema);
-                schemaObj.addSchema("Application", ApplicationConfigSchema);
-                schemaObj.addSchema("DB", DBConfigSchema);
-                schemaObj.addSchema("Server", ServerConfigSchema);
-                schemaObj.addSchema("Log", LogConfigSchema);
-                schemaObj.addSchema("CrossSite", CrossSiteConfigSchema);
                 if(schema && utils.isEmpty(name)) {
                     schemaObj.addSchema(name, schema);
                 }
@@ -96,7 +109,7 @@ export const GetConfig = (Key?: string, name?: string) => {
             configurable: false,
             enumerable: true,
             get: () => {
-                const config = utils.isEmpty(name) ? GlobalStore.getConfig("Application").Server : GlobalStore.getConfig(name);
+                const config = utils.isEmpty(name) ? GlobalStore.getConfig("Application").Server : (GlobalStore.getConfig(name) || GlobalStore.getConfig("Application")[name]);
                 return !utils.isEmpty(Key) ? utils.getValue(config, Key) : config;
             },
             set: () => {
@@ -128,3 +141,11 @@ export const GetServerConfig = (Target: any, attr: string) => {
         }
     });
 }
+
+
+export * from "./IConfigApplication";
+export * from "./IConfigCrossSite";
+export * from "./IConfigDB";
+export * from "./IConfigEmail";
+export * from "./IConfigLog";
+export * from "./IConfigServer";

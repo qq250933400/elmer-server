@@ -29,7 +29,8 @@ export default {
         },
         sourcePath: {
             type: "String",
-            isRequired: true
+            isRequired: true,
+            defaultValue: "./data"
         }
     }
 }

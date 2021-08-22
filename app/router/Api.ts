@@ -1,4 +1,5 @@
-import { Controller, RequestMapping, RequestBody, utils, AddInterceptors } from "../../src";
+import { Autowired } from "elmer-common";
+import { Controller, RequestMapping, RequestBody, utils, AddInterceptors, Email } from "../../src";
 
 type TypeRequestBody = {
     text: string;
@@ -7,6 +8,8 @@ type TypeRequestBody = {
 
 @Controller("api")
 export class Api {
+    @Autowired()
+    private email: Email;
 
     @RequestMapping("/guid", "GET")
     guid() {
@@ -22,10 +25,15 @@ export class Api {
 
     @AddInterceptors
     beforeRequest() {
-        return {
-            statusCode: 401,
-            UnAuth: true
-        }
+        console.log("BeforeRequestHeader");
+    }
+    @RequestMapping("/email", "POST")
+    sendEmail() {
+        return this.email.send({
+            toUsers: ["250933400@qq.com"],
+            text: "尊敬的用户您好，你的账号已开通。",
+            subject: "账号管理"
+        });
     }
 
     @RequestMapping("/upload", "POST")

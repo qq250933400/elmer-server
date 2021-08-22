@@ -2,18 +2,27 @@ export default {
     properties: {
         port: {
             type: 'Number',
-            default: 80
+            defaultValue: 80
         },
         host: {
             type: 'String',
-            default: '0.0.0.0'
+            defaultValue: '0.0.0.0'
         },
         publicKey: {
             type: "String",
             length: 16
         },
         staticPath: {
-            type: "String"
+            type: "String",
+            defaultValue: "./assets"
+        },
+        uploadPath: {
+            type: "String",
+            defaultValue: "./assets/upload"
+        },
+        temp: {
+            type: "String",
+            defaultValue: "./temp"
         }
     }
 }

@@ -11,8 +11,8 @@ import { getLogger } from "../logs";
 import { json } from 'body-parser';
 import { pluginExec, pluginInit } from "../plugin/PluginExec";
 import { TypeRequestProvider } from "../plugin/ABasePlugin";
-import * as Events from "events";
 import { HtmlParse } from "elmer-virtual-dom";
+import { initConfigSchema } from "../config";
 
 type TypeDefineGlobalObject = {
     factory: new(...args: any[]) => any;
@@ -94,13 +94,12 @@ export const BootApplication = (Target: new(...args: any[]) => any) => {
         const mainCallback = Target.prototype.main;
         Reflect.defineMetadata(DECORATOR_MODEL_TYPE,"BootApplication", Target);
         GlobalStore.add(Target);
+        initConfigSchema();
         Target.prototype.main = () => {
             const applicationConfig = getApplicationConfig();
             const host = applicationConfig?.Server?.host || "0.0.0.0";
             const port = applicationConfig?.Server?.port || 80;
             const app = express();
-            Events.EventEmitter.defaultMaxListeners = 20;
-            process.setMaxListeners(50);
             pluginInit(["Server"]);
             initGlobalObjects(); // 初始化全局对象
             crossSiteConfig(app);
@@ -111,6 +110,7 @@ export const BootApplication = (Target: new(...args: any[]) => any) => {
             // end include middleware
             initRouter(app);
             mainCallback.call(Target.prototype, app);
+
             app.listen(applicationConfig?.Server?.port, host, ()=>{
                 logger.info(`Server on: ${host}:${port}`);
             });
