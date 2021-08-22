@@ -1,11 +1,11 @@
 {
     "name": "elmer-boot",
-    "version": "1.2.0",
+    "version": "1.2.4",
     "description": "",
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",
     "bin": {
-        "init": "node ./lib/cmd.js init"
+        "elmer-sev": "./lib/cmd.js"
     },
     "scripts": {
         "start": "ts-node ./app/index.ts",

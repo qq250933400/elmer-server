@@ -9,7 +9,7 @@
         "allowJs": false,
         "checkJs": false,
         "module": "commonjs",
-        "removeComments": true,
+        "removeComments": false,
         "target": "ES2015",
         "lib": [
             "ES2015",

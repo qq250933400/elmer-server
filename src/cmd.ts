@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import CommandHelper from "elmer-common/lib/CommandHelper";
 import { ConfigTemplate } from "./module/ConfigTemplate";
 

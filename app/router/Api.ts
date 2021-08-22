@@ -31,6 +31,7 @@ export class Api {
     sendEmail() {
         return this.email.send({
             toUsers: ["250933400@qq.com"],
+            // ccUsers: ["elmer_mo@163.com"],
             text: "尊敬的用户您好，你的账号已开通。",
             subject: "会员注册"
         });

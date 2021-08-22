@@ -72,19 +72,20 @@ export class Email {
     @GetLogger()
     private logger: Logger;
 
-    constructor() {
-        console.log(this.config);
-    }
     send(option: TypeSendEmailOption):Promise<any> {
         const mailOption: any = {
             from: this.config.user,
-            to: option.toUsers.join(",")
+            to: option.toUsers.join(","),
+            subject: option.subject || ""
         };
         if(!utils.isEmpty(option.text)) {
             mailOption.text = option.text;
         }
         if(!utils.isEmpty(option.html)) {
             mailOption.html = option.html;
+        }
+        if(!utils.isEmpty(option.ccUsers) && option.ccUsers.length > 0) {
+            mailOption.cc = option.ccUsers.join(",");
         }
         return new Promise((resolve,reject) => {
             const reporter = this.createTransport();
@@ -116,17 +117,9 @@ export class Email {
         });
     }
     private createTransport(): Transporter<SMTPTransport.SentMessageInfo> {
-        console.log({
-            host: this.config.smtp,
-            secure: false,
-            auth: {
-                user: this.config.user,
-                pass: this.config.accessKey
-            }
-        });
         return createTransport(smtpTransport({
             host: this.config.smtp,
-            secure: false,
+            secure: !utils.isEmpty(this.config.secure) ? this.config.secure : false,
             auth: {
                 user: this.config.user,
                 pass: this.config.accessKey
