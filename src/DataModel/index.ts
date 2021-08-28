@@ -50,6 +50,9 @@ export class DataModel {
     destory(): void {
         this.dataEngine.dispose();
     }
+    query(id: string, params: any): Promise<any> {
+        return this.connectionQuery(this.dataEngine.connection, id, params);
+    }
     async securityQuery(fn: TypeSecurityQueryCallback): Promise<any> {
         return new Promise<any>((resolve, reject) => {
             try{
@@ -57,7 +60,7 @@ export class DataModel {
                     .then((connection) => {
                         const conResp = fn({
                             connection,
-                            query: (id: string, params: any) => this.query(connection, id, params)
+                            query: (id: string, params: any) => this.connectionQuery(connection, id, params)
                         });
                         if(utils.isPromise(conResp)) {
                             conResp
@@ -99,7 +102,7 @@ export class DataModel {
             }
         });
     }
-    private async query<T={}>(connection: any, id: string, parameters?: any): Promise<T> {
+    private async connectionQuery<T={}>(connection: any, id: string, parameters?: any): Promise<T> {
          return new Promise<T>((resolve, reject) => {
             if(!this.sourceData) {
                 this.sourceData = this.dataEngine.readDataSource(this.sourceFileName);

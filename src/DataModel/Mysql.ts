@@ -27,6 +27,7 @@ export class Mysql extends ADataEngine {
                 if(err) {
                     reject(err);
                 } else {
+                    this.connection = connection;
                     resolve(connection);
                 }
             });

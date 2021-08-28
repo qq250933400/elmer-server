@@ -20,9 +20,14 @@ export class MysqlPlugin extends ABasePlugin {
         return "Request";
     }
     parameterValidate(options: TypePluginCallbackOption, keyValue: any, id: string,): any {
-        let checkValue:string = (options.returnValue || keyValue || "").toString();
-        checkValue = checkValue.replace(/'/g, "\\'").replace(/\/\//g, "");
-        return checkValue;
+        const checkData = options.returnValue || keyValue || "";
+        if(utils.isNumeric(checkData)) {
+            return checkData;
+        } else {
+            let checkValue:string = checkData.toString();
+            checkValue = checkValue.replace(/'/g, "\\'").replace(/\/\//g, "");
+            return checkValue;
+        }
     }
     parameterization(options: TypePluginCallbackOption, queryValue: string|object, params: any, id: string, fn: Function): any {
         let queryStr = options.returnValue || queryValue.toString();
@@ -35,7 +40,7 @@ export class MysqlPlugin extends ABasePlugin {
             const varM = varStr.match(/\$\{\s*([a-z0-9_\.]{1,})\s*\}/i);
             const dataKey = varM[1];
             let dataValue = utils.getValue(params, dataKey);
-            if(dataValue) {
+            if(!utils.isEmpty(dataValue)) {
                 if(typeof fn === "function") {
                     const securityValue = fn(dataValue, dataKey);
                     if(securityValue) {
