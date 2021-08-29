@@ -4,25 +4,41 @@ import { DECORATOR_KEY } from "./GlobalStore";
 
 type TypeDecoratorType = "Class" | "Property" | "Method" | "Controller";
 
-
+/**
+ * 定义参数装饰器
+ * @param target 
+ * @param methodName 
+ * @param paramIndex 
+ * @param fn 
+ */
 export const DefineParamDecorator = (target: any, methodName: string, paramIndex: number, fn:Function) => {
     const logger = getLogger();
     try {
         const key = "PARAM_DECORATOR_" + DECORATOR_KEY;
+        const paramDecorators = Reflect.getMetadata(key, target) || {};
         const callback = fn();
-        if(!target[key]) {
-            target[key] = {};
+        if(!paramDecorators[methodName]) {
+            paramDecorators[methodName] = [];
         }
-        if(!target[key][methodName]) {
-            target[key][methodName] = [];
-        }
-        target[key][methodName].push({
+        paramDecorators[methodName].push({
             index: paramIndex,
             callback
         });
+        Reflect.defineMetadata(key, paramDecorators, target);
     } catch(e) {
         logger.error(e.stack);
     }
+};
+
+export const GetMethodParams = (target: any, methodName: string, ...args:any[]) => {
+    const key = "PARAM_DECORATOR_" + DECORATOR_KEY;
+    const paramDecorators = Reflect.getMetadata(key, target) || {};
+    const allParams = Reflect.getMetadata("design:paramtypes", target, methodName) || [];
+    const decParams = paramDecorators[methodName] || [];
+    decParams.forEach((param) => {
+        allParams[param.index] = param.callback(...args);
+    });
+    return allParams || [];
 }
 
 export default (fn:Function, factory: new(...args: any[]) => any, type: TypeDecoratorType = "Class") => {

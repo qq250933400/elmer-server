@@ -24,8 +24,12 @@ export class Api {
     }
 
     @AddInterceptors
-    beforeRequest() {
+    beforeRequest(@RequestBody body: TypeRequestBody) {
         console.log("BeforeRequestHeader");
+        return {
+            statusCode: 500,
+            message: "block by auth"
+        }
     }
     @RequestMapping("/email", "POST")
     sendEmail() {

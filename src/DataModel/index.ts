@@ -6,8 +6,7 @@ import { GetLogger } from "../logs";
 import { Logger } from "log4js";
 import utils from "../core/utils";
 import DefineDecorator from "../core/DefineDecorator";
-import { DECORATOR_MODEL_TYPE } from "../core/GlobalStore";
-import { Model } from "elmer-common";
+import { Model, queueCallFunc } from "elmer-common";
 import * as path from "path";
 type TypeSecurityQueryOptions = {
     connection: any;
@@ -43,69 +42,76 @@ export class DataModel {
             this.logger.error(err?.stack || err?.sqlMessage || err?.message || "Unknow error.[DataEngine]");
         });
         this.sourceFileName = localSourceFile;
+        console.log("--------DataModel---Application--Init--");
     }
-    connect(): Promise<any> {
+    async connect(): Promise<any> {
         return this.dataEngine.connect();
     }
     destory(): void {
         this.dataEngine.dispose();
     }
-    query(id: string, params: any): Promise<any> {
-        return this.connectionQuery(this.dataEngine.connection, id, params);
+    async query(id: string, params: any): Promise<any> {
+        return new Promise<any>((resolve, reject) => {
+            console.log("------Query---: ", this.dataEngine.isConnected, this.dataEngine.connection);
+            console.log("------QueryTime---: ", this.dataEngine.connectedDateTime);
+            this.connectionQuery(this.dataEngine.connection, id, params)
+                .then(resolve)
+                .catch((err) => {
+                    this.logger.error(err.trace || err.message, "[Model_Query]");
+                    reject(err);
+                });
+        });
     }
     async securityQuery(fn: TypeSecurityQueryCallback): Promise<any> {
         return new Promise<any>((resolve, reject) => {
-            try{
-                this.connect()
-                    .then((connection) => {
-                        const conResp = fn({
-                            connection,
-                            query: (id: string, params: any) => this.connectionQuery(connection, id, params)
+            queueCallFunc([
+                {
+                    id: "connect",
+                    params: {},
+                    fn: () => this.dataEngine.connect()
+                },
+                {
+                    id: "queryData",
+                    params: {},
+                    fn: ({ lastResult }) => {
+                        console.log("------5", this.dataEngine.isConnected);
+                        console.log("------Time: ", this.dataEngine.connectedDateTime);
+                        return fn({
+                            connection: lastResult,
+                            query: (id: string, params: any) => this.connectionQuery(lastResult, id, params)
                         });
-                        if(utils.isPromise(conResp)) {
-                            conResp
-                                .then((resp) => {
-                                    resolve(resp);
-                                    this.destory();
-                                })
-                                .catch((err) => {
-                                    if(!utils.isEmpty(err.sqlMessage)) {
-                                        this.logger.error(err.sqlMessage || err.message, err.code);
-                                    } else {
-                                        this.logger.error(err.stack || err.message);
-                                    }
-                                    this.logger.error("QueryString: " + err.sql);
-                                    this.destory();
-                                    reject({
-                                        statusCode: "DB_505",
-                                        message: "query fail"
-                                    });
-                                });
-                        } else {
-                            throw new Error("securityQuery方法callback必须返回Promise对象。");
-                        }
-                    })
-                    .catch((err) => {
-                        this.logger.error(err.sqlMessage, err.code);
-                        reject({
-                            statusCode: "DB_500",
-                            message: "create connection failed"
-                        });
-                    });
-            } catch(e) {
-                this.logger.error(e.stack || e.message);
-                reject({
-                    statusCode: e.statusCode,
-                    message: "系统内部错误"
-                });
-                this.destory();
-            }
+                    }
+                },
+                {
+                    id: "destroy",
+                    params: {},
+                    fn: ():any => this.destory()
+                }
+            ]).then((resp) => {
+                console.log("------7", this.dataEngine.isConnected);
+                if(!utils.isEmpty(resp.queryData?.statusCode)) {
+                    delete resp.connect;
+                    this.logger.error(resp.queryData);
+                    reject(resp.queryData);
+                } else {
+                    resolve(resp.queryData);
+                }
+            }).catch((err) => {
+                reject(err);
+            });
         });
     }
     private async connectionQuery<T={}>(connection: any, id: string, parameters?: any): Promise<T> {
          return new Promise<T>((resolve, reject) => {
             if(!this.sourceData) {
                 this.sourceData = this.dataEngine.readDataSource(this.sourceFileName);
+            }
+            if(!connection) {
+                reject({
+                    statusCode: "DB_406",
+                    message: "连接失效"
+                });
+                return;
             }
             if(utils.isArray(this.sourceData) && this.sourceData?.length > 0) {
                 let query = null;
@@ -120,6 +126,7 @@ export class DataModel {
                 }
                 if(!utils.isEmpty(query)) {
                     const queryValue = this.dataEngine.parameterization(query, parameters, id);
+                    console.log("---------4", this.dataEngine.isConnected);
                     this.dataEngine.query(connection, queryValue)
                         .then((mysqlData) => resolve(mysqlData as any))
                         .catch((err) => {

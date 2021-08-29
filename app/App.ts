@@ -2,7 +2,6 @@ import "./router";
 import { BootApplication, Config, utils } from "../src";
 import { UsePlugins, ABasePlugin, TypePluginType } from "../src/plugin";
 import { Autowired } from "elmer-common";
-import { TestService } from "./TestService";
 
 class AdminRequestPlugin extends ABasePlugin {
     init(): void {
@@ -37,8 +36,6 @@ class AdminRequestPlugin extends ABasePlugin {
 ])
 @BootApplication
 export class App {
-    @Autowired()
-    private service: TestService;
     main(): void {
         console.log("----Need run Application");
     }

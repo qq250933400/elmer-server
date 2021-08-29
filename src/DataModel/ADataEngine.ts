@@ -4,6 +4,8 @@ type TypeDataEngineEvent = "onError" | "onConnected" | "onQuery";
 
 export abstract class ADataEngine extends ADataBase {
     connection: any;
+    public isConnected: boolean;
+    public connectedDateTime: string;
     private eventListener: any = {};
     // abstract createConnection<T={}>(): T;
     abstract connect(): Promise<any>;

@@ -1,12 +1,15 @@
 import "reflect-metadata";
 import { Express, Request, Response } from "express";
+import { DECORATORS_CLASS_TYPE, DECORATORS_MODEL_ID } from "elmer-common/lib/decorators/base";
+import utils from './utils';
 import { getLogger } from "../logs";
 import { Logger } from "log4js";
 import GlobalStore,{ DECORATOR_MODEL_TYPE, DECORATOR_KEY } from "./GlobalStore";
-import DefineDecorator from "./DefineDecorator";
+import DefineDecorator, { GetMethodParams } from "./DefineDecorator";
 import { pluginExec, pluginDestory } from "../plugin/PluginExec";
 import { TypeRequestProvider } from "../plugin/ABasePlugin";
-import utils from './utils';
+import { queueCallFunc } from "elmer-common";
+
 
 type TypeRequestMethodOptions = {
     controller: any;
@@ -19,154 +22,215 @@ export const ROUTER_FLAG_SSID = "ROUTER_FLAG_SSID_9728e438-d856-41ca-b3d3-118120
 export const ROUTER_KEY = "9728e438-d856-41ca-b3d3-11812048";
 export const CONTROLLER_INTERCEPTOR = "CONTROLLER_INTERCEPTOR_9728e438-d856-41ca-b3d3-11812048";
 
-export type TypeHttpType = "GET" | "POST" | "PUT" | "DELETE" | "OPTIONS";
+
+type TypeRequestType = "GET" | "POST" | "PUT" | "DELETE" | "OPTIONS";
+type TypeDefineRoute = {
+    attrKey: string;
+    uid: string;
+    url: string|RegExp;
+    method: TypeRequestType;
+    target?: any;
+};
+
+const CONST_DECORATORS_EXPRESS_CONTROLLER = "CONST_DECORATORS_EXPRESS_CONTROLLER"; // controller标识
+const CONST_DECORATORS_EXPRESS_CONTROLLER_NAMESPACE = "CONST_DECORATORS_EXPRESS_CONTROLLER_NAMESPACE"; // 定义controller namespace属性
+const CONST_DECORATORS_EXPRESS_CONTROLLER_ROUTE = "CONST_DECORATORS_EXPRESS_CONTROLLER_ROUTE"; // Route标识
+
+const controllerStorage = {
+    classPool: [],
+    objPool: {},
+    routers: []
+};
 
 export const Controller = (namespace: string) => {
-    return (target: new(...args: any[]) => any) => {
-        DefineDecorator(() => {
-            Reflect.defineMetadata(CONTROLLER_ROUTER_NAMESPACE, namespace, target);
-            Reflect.defineMetadata(ROUTER_KEY, ROUTER_FLAG_SSID, target);
-            Reflect.defineMetadata(DECORATOR_MODEL_TYPE, "Controller", target);
-            target.prototype.namespace = namespace;
-            GlobalStore.add(target);
-        }, target, "Controller");
-    }
-}
-
-const getRequestParams = (target: any,name: string, req: Request, res: Response) => {
-    const key = "PARAM_DECORATOR_" + DECORATOR_KEY;
-    const callbacks = target[key] ? target[key][name] : null;
-    if(callbacks) {
-        const args = [];
-        callbacks.map((item) => {
-            const index = item.index;
-            const callback = item.callback;
-            args[index] = callback(req, res);
-        });
-        return args;
-    }
-}
-const BeforeRequestHandle = (req: Request, res: Response, next: Function, options: TypeRequestMethodOptions): boolean => {
-    const saveInerceptors = Reflect.getMetadata(CONTROLLER_INTERCEPTOR, options.controller);
-    if(utils.isArray(saveInerceptors)) {
-        let returnValue = null;
-        for(const iptor of saveInerceptors) {
-            const { callback, target, attrKey } = iptor as any;
-            const params: any[] = getRequestParams(target,attrKey, req, res) || [];
-            const iptorResult = callback.apply(target, params);
-            if(iptorResult) {
-                returnValue = iptorResult;
-                break;
+    return (Target: new(...args: any[]) => any) => {
+        const classType = Reflect.getMetadata(DECORATORS_CLASS_TYPE, Target);
+        if(utils.isEmpty(classType)) {
+            if(!utils.isEmpty(namespace)) {
+                const uid = "elmer_boot_controller_" + utils.guid();
+                Reflect.defineMetadata(CONST_DECORATORS_EXPRESS_CONTROLLER_NAMESPACE, namespace, Target);
+                Reflect.defineMetadata(DECORATORS_CLASS_TYPE, CONST_DECORATORS_EXPRESS_CONTROLLER, Target);
+                Reflect.defineMetadata(DECORATORS_MODEL_ID, "elmer_boot_controller_" + utils.guid(), Target);
+                controllerStorage.classPool.push(Target);
             }
-        }
-        if(!returnValue) {
-            return true;
         } else {
-            options.returnValue = returnValue;
-            return false;
+            throw new Error("Controller不允许被注释为其他类型的类");
         }
-    } else {
-        return true;
     }
 };
-const AfterRequestHandle = (req: Request, res: Response, next: Function, options: TypeRequestMethodOptions) => {
-    pluginDestory("Request");
+
+export const RequestMapping = (path: string|RegExp, type?: TypeRequestType) => {
+    return (target: any, attr: any, descriptor: PropertyDescriptor) => {
+        // const currentRoutes: TypeDefineRoute[] = controllerStorage.routers || [];
+        const routeId = CONST_DECORATORS_EXPRESS_CONTROLLER_ROUTE + "_" + attr;
+        const defineRoutes: any[] = Reflect.getMetadata(CONST_DECORATORS_EXPRESS_CONTROLLER_ROUTE, target) || [];
+        if(utils.isEmpty(path)) {
+            throw new Error("定义路由地址不能为空")
+        }
+        const filterRoutes = defineRoutes.filter((value) => value.url === path);
+        if(!filterRoutes || filterRoutes.length <= 0) {
+            defineRoutes.push({
+                uid: routeId,
+                attrKey: attr,
+                url: path,
+                method: type
+            });
+            Object.defineProperty(target, attr, {
+                configurable: true,
+                enumerable: false,
+                get: () => descriptor.value.bind(target),
+                set: () => {
+                    throw new Error("定义路由不允许被重写。");
+                }
+            });
+            Reflect.defineMetadata(CONST_DECORATORS_EXPRESS_CONTROLLER_ROUTE, defineRoutes, target);
+        } else {
+            throw new Error("定义路由地址重复。" + path);
+        }
+    };
 };
-const ExceptionHandle = (req: Request, res: Response, exception:Error) => {
-    return pluginExec(["Request"], "RequestPlugin", "exception", exception, req, res);
+
+const beforeResponseHandler = (opt: TypeRequestMethodOptions, req: Request, res: Response, next: Function):any => {
+    // 先执行interceptors hook
+    const saveInerceptors = Reflect.getMetadata(CONTROLLER_INTERCEPTOR, opt.controller) || [];
+    if(saveInerceptors) {
+        return queueCallFunc(saveInerceptors, ({}, vparam: any):any => {
+            const vApplyParams = GetMethodParams(opt.controller, vparam.attrKey, req, res);
+            return opt.controller[vparam.attrKey].apply(opt.controller, vApplyParams);
+        }, {
+            throwException: true,
+            paramConvert: (param) => ({
+                id: param.attrKey,
+                params: param
+            })
+        });
+    }
 };
-export const RequestMapping = (path: string, type?: TypeHttpType, async?: boolean) => {
-    return (target: any, attr: string, descriptor: PropertyDescriptor) => {
-        const subscribe = ((handler:Function, routePath: string, method: TypeHttpType, isAsync: boolean, attr: string) => {
-            return function(app:Express){
-                const owner = this;
-                const mType = method || "GET";
-                const mPath = ("/" + this.namespace + "/" + routePath).replace(/\/\//g, "/");
-                const logger:Logger = getLogger();
-                const mTypeCallback = async function(req: Request, res: Response, next: Function) {
-                    logger.info(`[${mType}] ` + req.url);
-                    try{
-                        const beforeOptions: TypeRequestMethodOptions = {
-                            controller: target,
-                            attribute: attr
-                        };
-                        if(BeforeRequestHandle(req, res, next, beforeOptions)) {
-                            const paramer: any[] = getRequestParams(target,attr, req, res) || [];
-                            const respResult = handler.apply(owner, paramer);
-                            if(utils.isPromise(respResult)) {
-                                respResult.then((respData) => {
-                                    const respResultData = pluginExec<TypeRequestProvider>(["Request"], "RequestPlugin", "beforSend", respData);
-                                    res.send(respResultData || respData);
-                                })
-                                .catch((err) => {
-                                    const respResultData = pluginExec<TypeRequestProvider>(["Request"], "RequestPlugin", "beforSend", err);
-                                    logger.error(err.stack || err.message);
-                                    res.status(500);
-                                    res.send(respResultData || err);
+const afterResponseHandler = (opt: TypeRequestMethodOptions, req: Request, res: Response, next: Function):any => {
+
+};
+
+const exceptionHandler = (opt: TypeRequestMethodOptions & { exception: Error }, req: Request, res: Response, next: Function):any => {
+
+};
+const setRouteListen = (app:Express,constroller: any, route: TypeDefineRoute) => {
+    const logger:Logger = getLogger();
+    const requestListener = ((obj: any, config: TypeDefineRoute) => {
+        return function(req: Request, res: Response, next: Function) {
+            const methodMaxLen = 7;
+            const spaceLen = methodMaxLen > config.method.length ? (" ".repeat(methodMaxLen - config.method.length)) : "";
+            logger.info(`[${config.method}]${spaceLen} ${req.url}`);
+            queueCallFunc([
+                {
+                    id: "before",
+                    params: {},
+                    fn: () => beforeResponseHandler({
+                        controller: obj,
+                        attribute: config.attrKey
+                    }, req, res, next)
+                },
+                {
+                    id: "beforeChecking",
+                    params: {},
+                    fn: (opt):any => {
+                        console.log(opt);
+                    }
+                },
+                {
+                    id: "handler",
+                    params: {},
+                    fn: () => {
+                        const params: any[] = GetMethodParams(obj, config.attrKey, req, res, next) || [];
+                        return obj[config.attrKey].apply(obj, params);
+                    }
+                }, {
+                    id: "after",
+                    params: {},
+                    fn: () => afterResponseHandler({
+                        controller: obj,
+                        attribute: config.attrKey
+                    }, req, res, next)
+                }
+            ], null, {
+                throwException: true
+            }).then((resp: any) => {
+                res.send(resp.handler);
+            }).catch((err) => {
+                logger.error(err);
+                // 错误统一处理
+                const exceptionResult = exceptionHandler({
+                    controller: obj,
+                    attribute: route.attrKey,
+                    returnValue: null,
+                    exception: err
+                }, req, res, next);
+                res.status(500);
+                if(!exceptionResult) {
+                    res.send({
+                        statusCode: 500,
+                        message: "系统内部程序错误。"
+                    });
+                } else {
+                    res.send(exceptionResult);
+                }
+            });
+        };
+    })(constroller, route);
+    const methodMaxLen = 7;
+    const spaceLen = methodMaxLen > route.method.length ? (" ".repeat(methodMaxLen-route.method.length)) : "";
+    switch(route.method) {
+        case "GET":
+            app.get(route.url, requestListener);
+            break;
+        case "POST":
+            app.post(route.url, requestListener);
+            break;
+        case "DELETE":
+            app.delete(route.url, requestListener);
+            break;
+        case "OPTIONS":
+            app.options(route.url, requestListener);
+            break;
+        case "PUT":
+            app.put(route.url, requestListener);
+            break;
+        default:
+            app.get(route.url, requestListener);
+    }
+
+    logger.info(`[Init][${route.method}]${spaceLen}  `, route.url);
+};
+
+export const initRoute = (app:Express) => {
+    const allControlelrs = controllerStorage.classPool || [];
+    allControlelrs.forEach((Controller: new(...args: any[]) => any) => {
+        const classType = Reflect.getMetadata(DECORATORS_CLASS_TYPE, Controller);
+        if(classType !== CONST_DECORATORS_EXPRESS_CONTROLLER) {
+            throw new Error("错误的控制器，必须使用Controller装饰器声明。");
+        } else {
+            ((DefineController: new(...args: any[]) => any) => {
+                const moduleId = Reflect.getMetadata(DECORATORS_MODEL_ID, DefineController);
+                if(!controllerStorage.objPool[moduleId]) {
+                    const obj = new Controller();
+                    const namespace = Reflect.getMetadata(CONST_DECORATORS_EXPRESS_CONTROLLER_NAMESPACE, DefineController);
+                    const routers = Reflect.getMetadata(CONST_DECORATORS_EXPRESS_CONTROLLER_ROUTE, obj);
+                    if(routers && routers.length > 0) {
+                        routers.forEach((route: TypeDefineRoute) => {
+                            ((defineRoute: TypeDefineRoute, cObj: any) => {
+                                const url = [namespace, defineRoute.url].join("/").replace(/\/\//g, "/");
+                                const routeUrl = /^\//.test(url) ? url : "/" + url;
+                                setRouteListen(app, cObj, {
+                                    ...defineRoute,
+                                    url: routeUrl
                                 });
-                            } else {
-                                const respResultData = pluginExec<TypeRequestProvider>(["Request"], "RequestPlugin", "beforSend", respResult);
-                                res.send(respResultData || respResult);
-                            }
-                        } else {
-                            if(beforeOptions.returnValue?.statusCode && !/^200$/.test(beforeOptions.returnValue?.statusCode)) {
-                                res.status(500);
-                            }
-                            res.send(beforeOptions.returnValue);
-                        }
-                    } catch(e) {
-                        const exceptionResult: any = ExceptionHandle(req, res, e);
-                        logger.error(e.stack);
-                        if(exceptionResult) {
-                            res.status(exceptionResult.status || 500).send(exceptionResult.responseBody || exceptionResult);
-                        } else {
-                            res.status(500).send({
-                                statusCode: 500,
-                                message: "Technical Error"
-                            });
-                        }
-                    } finally {
-                        AfterRequestHandle(req, res, next, {
-                            controller: target,
-                            attribute: attr
+                            })(route, obj);
                         });
                     }
-                };
-                logger.info(`[INIT_${mType}] `+ mPath);
-                this["app"] = app;
-                switch (mType) {
-                    case "GET":
-                        app.get(mPath, mTypeCallback);
-                        break;
-                    case "POST":
-                        app.post(mPath, mTypeCallback);
-                        break;
-                    case "PUT":
-                        app.put(mPath, mTypeCallback);
-                        break;
-                    case "DELETE":
-                        app.delete(mPath, mTypeCallback);
-                        break;
-                    case "OPTIONS":
-                        app.options(mPath, mTypeCallback);
-                        break;
-                    default:
-                        app.get(mPath, mTypeCallback);
+                    controllerStorage.objPool[moduleId] = obj;
                 }
-            };
-        })(descriptor.value, path, type, async, attr);
-        // subscribe.call(target);
-        Object.defineProperty(target, ROUTER_KEY + "_" + attr, {
-            enumerable: true,
-            configurable: true,
-            get: function() {
-                return subscribe.bind(this);
-            },
-            set: () => {
-                throw new Error("不允许重写路由方法。");
-            }
-        });
-    };
+            })(Controller);
+        }
+    });
 };
 
 export const AddInterceptors = (Target: any, attr: string, descriptor: PropertyDescriptor): void => {
@@ -177,4 +241,4 @@ export const AddInterceptors = (Target: any, attr: string, descriptor: PropertyD
         target: Target
     });
     Reflect.defineMetadata(CONTROLLER_INTERCEPTOR, saveInerceptors, Target);
-}
+};

@@ -42,6 +42,7 @@
         "elmer-common": "^3.0.0",
         "elmer-virtual-dom": "^2.0.12",
         "express": "^4.17.1",
+        "express-session": "^1.17.2",
         "log4js": "^6.3.0",
         "mysql": "^2.18.1",
         "nodemailer": "^6.6.3",
@@ -52,6 +53,7 @@
     "devDependencies": {
         "@types/cookie-parser": "^1.4.2",
         "@types/express": "^4.17.11",
+        "@types/express-session": "^1.17.4",
         "@types/jest": "^26.0.23",
         "@types/mysql": "^2.15.18",
         "@types/nodemailer": "^6.4.4",

@@ -12,6 +12,7 @@ import { pluginExec } from "../plugin/PluginExec";
 export class Mysql extends ADataEngine {
     connection: Connection;
     poolObj: Pool;
+    isConnected: boolean = false;
 
     @GetGlobalObject("htmlParse")
     private htmlParse: HtmlParse;
@@ -22,22 +23,29 @@ export class Mysql extends ADataEngine {
     }
     connect(): Promise<any> {
         this.poolObj = this.createConnection();
+        this.logger.debug("1. Start to connect");
         return new Promise<any>((resolve, reject) => {
             this.poolObj.getConnection((err, connection) => {
                 if(err) {
                     reject(err);
                 } else {
                     this.connection = connection;
-                    resolve(connection);
+                    this.isConnected = true;
+                    this.connectedDateTime = (new Date()).toLocaleDateString();
+                    this.logger.debug("2. Connected.");
+                    resolve({});
                 }
             });
         });
     }
     dispose(): void {
+        this.logger.debug("3. Start to disconnect");
         this.poolObj.end((err) => {
             if(err) {
                 this.fire("onError", err);
             }
+            this.isConnected = false;
+            this.logger.debug("4. disconnected.");
         });
     }
     query<T={}, P={}>(connection: Connection, queryData: P): Promise<T> {

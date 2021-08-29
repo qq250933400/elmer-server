@@ -18,7 +18,7 @@ export class Login {
     @Autowired()
     files: StaticFiles;
 
-    @RequestMapping("/config", "GET", true)
+    @RequestMapping("/config", "GET")
     async config(
         @QueryParam page: number,
         @RequestCookie token: string,

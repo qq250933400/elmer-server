@@ -2,10 +2,11 @@ import "reflect-metadata";
 import * as express from "express";
 import * as path from "path";
 import * as cookieParser from "cookie-parser";
+import * as expressSession from "express-session";
 import { Express,Request, Response } from "express";
 import GlobalStore,{ DECORATOR_MODEL_TYPE } from "./GlobalStore";
 import DefineDecorator from "./DefineDecorator";
-import { ROUTER_KEY, ROUTER_FLAG_SSID } from "./Controller";
+import { ROUTER_KEY, ROUTER_FLAG_SSID, initRoute } from "./Controller";
 import { getApplicationConfig } from "../config";
 import { getLogger } from "../logs";
 import { json } from 'body-parser';
@@ -13,6 +14,7 @@ import { pluginExec, pluginInit } from "../plugin/PluginExec";
 import { TypeRequestProvider } from "../plugin/ABasePlugin";
 import { HtmlParse } from "elmer-virtual-dom";
 import { initConfigSchema } from "../config";
+import { utils } from "elmer-common";
 
 type TypeDefineGlobalObject = {
     factory: new(...args: any[]) => any;
@@ -29,42 +31,26 @@ const crossSiteConfig = (app:Express) => {
         };
         pluginExec<TypeRequestProvider>(["Request"], "RequestPlugin", "beforeRequest", req, res, next, eventObj);
         eventObj.continue && next();
-    })
+    });
+    app.use(expressSession({
+        genid: () => utils.guid(),
+        secret: "ExpressApplication",
+        cookie: {
+            maxAge: 60000
+        }
+    }));
 };
 /**
  * 初始化所有controller
  * @param app 
  */
 const initRouter = (app:Express): void => {
-    const controllers = GlobalStore.getControllers();
     const staticPath = getApplicationConfig()?.Server?.staticPath;
     if(typeof staticPath === "string" && staticPath.length > 0) {
         const staticRootPath = path.resolve(process.cwd(), staticPath);
         app.use(express.static(staticRootPath));
     }
-    if(controllers) {
-        Object.keys(controllers).map((namespace) => {
-            const Controller = controllers[namespace];
-            const ssid = Reflect.getMetadata(ROUTER_KEY, Controller);
-            if(ssid !== ROUTER_FLAG_SSID) {
-                throw new Error(`路由Controller定义错误，必须使用Controller装饰器声明。(${namespace})`);
-            } else {
-                const obj = new Controller();
-                const protoObj = obj["__proto__"];
-                protoObj && Object.keys(protoObj).map((attr: string) => {
-                    const prefixKey = attr.substr(0, ROUTER_KEY.length);
-                    if(prefixKey === ROUTER_KEY) {
-                        const attrFn = protoObj[attr];
-                        if(typeof attrFn === "function") {
-                            attrFn(app);
-                        } else {
-                            throw new Error("定义路由请求method不是Function函数。");
-                        }
-                    }
-                });
-            }
-        });
-    }
+    initRoute(app);
 };
 
 const initGlobalObjects = () => {
