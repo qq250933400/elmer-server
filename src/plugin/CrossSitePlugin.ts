@@ -2,13 +2,14 @@ import { ABasePlugin, TypePluginType } from "./ABasePlugin";
 import { Request, Response } from "express";
 import { GetConfig } from "../config";
 import { IConfigCrossSite } from "../config/IConfigCrossSite";
+import { getLogger } from "../logs";
 
 export class CrossSitePlugin extends ABasePlugin {
     @GetConfig(null, "CrossSite")
     private config: IConfigCrossSite;
     init(): void {
         this.register("RequestPlugin", {
-            beforeRequest: this.beforeRequest.bind(this)
+            beforeAll: this.beforeAll.bind(this)
         });
     }
     getId(): string {
@@ -17,12 +18,14 @@ export class CrossSitePlugin extends ABasePlugin {
     getType(): TypePluginType {
         return "Request";
     }
-    private beforeRequest({}, req: Request, res: Response, next: Function, opt: any): void {
+    private beforeAll({}, req: Request, res: Response, next: Function, opt: any): void {
         const method = req.method;
         const configData = this.config?.crossSite;
+        const logger = getLogger();
         if(configData?.enabled) {
             const origin = req.headers["origin"];
             const isOptions = method === "OPTIONS";
+            logger.debug("开始跨域配置检查: ", req.url);
             for(const rule of configData.rules) {
                 if(origin === rule.domain) {
                     let allHeaders = rule.allowHeaders || [];
@@ -65,10 +68,13 @@ export class CrossSitePlugin extends ABasePlugin {
                     if(isOptions) {
                         res.status(200).send({});
                         opt.continue = false;
+                        logger.debug("Option请求跨域检查通过");
                     }
                     break;
                 }
             }
+        } else {
+            logger.debug("未开启跨域检查校验。");
         }
     }
 }

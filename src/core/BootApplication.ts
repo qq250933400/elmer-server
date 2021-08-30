@@ -29,7 +29,7 @@ const crossSiteConfig = (app:Express) => {
         const eventObj = {
             continue: true
         };
-        pluginExec<TypeRequestProvider>(["Request"], "RequestPlugin", "beforeRequest", req, res, next, eventObj);
+        pluginExec<TypeRequestProvider>(["Request"], "RequestPlugin", "beforeAll", req, res, next, eventObj);
         eventObj.continue && next();
     });
     app.use(expressSession({

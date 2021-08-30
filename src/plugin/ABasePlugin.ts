@@ -11,6 +11,7 @@ export type TypePluginCallbackOption = {
 export type TypePluginProvider = "RequestPlugin" | "DataModelPlugin" | "MysqlPlugin";
 
 export type TypeRequestProvider = {
+    beforeAll?: (options: TypePluginCallbackOption, req: Request, res: Response, next: Function) => void;
     beforeRequest?: (options: TypePluginCallbackOption, req: Request, res: Response, next: Function) => void;
     afterRequest?: (options: TypePluginCallbackOption, req: Request, res: Response, next: Function) => void;
     beforSend?: (options: TypePluginCallbackOption, data: any) => any;

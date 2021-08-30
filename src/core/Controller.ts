@@ -94,17 +94,61 @@ const beforeResponseHandler = (opt: TypeRequestMethodOptions, req: Request, res:
     // 先执行interceptors hook
     const saveInerceptors = Reflect.getMetadata(CONTROLLER_INTERCEPTOR, opt.controller) || [];
     if(saveInerceptors) {
-        return queueCallFunc(saveInerceptors, ({}, vparam: any):any => {
-            const vApplyParams = GetMethodParams(opt.controller, vparam.attrKey, req, res);
-            return opt.controller[vparam.attrKey].apply(opt.controller, vApplyParams);
-        }, {
-            throwException: true,
-            paramConvert: (param) => ({
-                id: param.attrKey,
-                params: param
-            })
+        return new Promise((_resolve, _reject) => {
+            queueCallFunc(saveInerceptors, (optx, vparam: any):any => {
+                return new Promise((resolve, reject) => {
+                    // inecreptor只要有一个返回结果，即表示要返回拦截的结果，不在往下执行.
+                    if(!optx.lastResult) {
+                        // 上一次拦截没有返回即表示需要往下执行拦截方法
+                        const vApplyParams = GetMethodParams(opt.controller, vparam.attrKey, req, res);
+                        const checkResult = vparam.callback.apply(opt.controller, vApplyParams);
+                        if(utils.isPromise(checkResult)) {
+                            checkResult.then((vData) => {
+                                resolve(vData);
+                            }).catch((err) => {
+                                reject(err);
+                            });
+                        } else {
+                            resolve(checkResult);
+                        }
+                    } else {
+                        // 将上一次结果当做最终结果处理
+                        resolve(optx.lastResult);
+                    }
+                });
+            }, {
+                throwException: true,
+                paramConvert: (param: any) => {
+                    if(param.id !== "pluginResult") {
+                        return {
+                            id: param.attrKey,
+                            params: param
+                        };
+                    } else {
+                        return param;
+                    }
+                },
+                onBefore: (paramList: any[]) => {
+                    paramList.push({
+                        id: "pluginResult",
+                        params: {},
+                        fn: (myOpt:any) => {
+                            if(!myOpt.lastResult) {
+                                return pluginExec(["Request"], "RequestPlugin", "beforeRequest", req, res, next);
+                            } else {
+                                return myOpt.lastResult;
+                            }
+                        }
+                    })
+                }
+            }).then((data) => {
+                _resolve(data.pluginResult);
+            }).catch((err) => {
+                _reject(err.exception);
+            });
         });
     }
+    // need to call plugin to do the handler before request
 };
 const afterResponseHandler = (opt: TypeRequestMethodOptions, req: Request, res: Response, next: Function):any => {
 
@@ -130,18 +174,15 @@ const setRouteListen = (app:Express,constroller: any, route: TypeDefineRoute) =>
                     }, req, res, next)
                 },
                 {
-                    id: "beforeChecking",
-                    params: {},
-                    fn: (opt):any => {
-                        console.log(opt);
-                    }
-                },
-                {
                     id: "handler",
                     params: {},
-                    fn: () => {
-                        const params: any[] = GetMethodParams(obj, config.attrKey, req, res, next) || [];
-                        return obj[config.attrKey].apply(obj, params);
+                    fn: (opt) => {
+                        if(!opt.lastResult) {
+                            const params: any[] = GetMethodParams(obj, config.attrKey, req, res, next) || [];
+                            return obj[config.attrKey].apply(obj, params);
+                        } else {
+                            return opt.lastResult;
+                        }
                     }
                 }, {
                     id: "after",
@@ -241,4 +282,10 @@ export const AddInterceptors = (Target: any, attr: string, descriptor: PropertyD
         target: Target
     });
     Reflect.defineMetadata(CONTROLLER_INTERCEPTOR, saveInerceptors, Target);
+    Object.defineProperty(Target, attr, {
+        value: descriptor.value,
+        configurable: true,
+        enumerable: false,
+        writable: false
+    });
 };

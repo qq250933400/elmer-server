@@ -19,13 +19,14 @@ export class Api {
     }
     @RequestMapping("/encode", "POST")
     encode(@RequestBody body: TypeRequestBody) {
-        console.log(body, "----");
+        console.log(this, body, "----");
         return utils.aseEncode(body.text);
     }
 
     @AddInterceptors
-    beforeRequest(@RequestBody body: TypeRequestBody) {
-        console.log("BeforeRequestHeader");
+    public beforeRequest(@RequestBody body: TypeRequestBody) {
+        console.log("BeforeRequestHeader", body);
+        this.otherExec();
         return {
             statusCode: 500,
             message: "block by auth"
@@ -44,6 +45,9 @@ export class Api {
     @RequestMapping("/upload", "POST")
     uploadTest() {
         
+    }
+    private otherExec() {
+        console.log("otherExec");
     }
 }
 console.log("---++--")
