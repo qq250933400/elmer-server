@@ -20,7 +20,7 @@ export class CrossSitePlugin extends ABasePlugin {
     }
     private beforeAll({}, req: Request, res: Response, next: Function, opt: any): void {
         const method = req.method;
-        const configData = this.config?.crossSite;
+        const configData = this.config;
         const logger = getLogger();
         if(configData?.enabled) {
             const origin = req.headers["origin"];

@@ -151,11 +151,11 @@ const beforeResponseHandler = (opt: TypeRequestMethodOptions, req: Request, res:
     // need to call plugin to do the handler before request
 };
 const afterResponseHandler = (opt: TypeRequestMethodOptions, req: Request, res: Response, next: Function):any => {
-
+    return pluginExec(["Request"], "RequestPlugin", "afterRequest", req, res, next);
 };
 
-const exceptionHandler = (opt: TypeRequestMethodOptions & { exception: Error }, req: Request, res: Response, next: Function):any => {
-
+const exceptionHandler = (opt: TypeRequestMethodOptions & { exception: Error }, req: Request, res: Response, next: Function):Promise<any> => {
+    return pluginExec(["Request"], "RequestPlugin", "exception", req, res, next);
 };
 const setRouteListen = (app:Express,constroller: any, route: TypeDefineRoute) => {
     const logger:Logger = getLogger();
@@ -163,6 +163,7 @@ const setRouteListen = (app:Express,constroller: any, route: TypeDefineRoute) =>
         return function(req: Request, res: Response, next: Function) {
             const methodMaxLen = 7;
             const spaceLen = methodMaxLen > config.method.length ? (" ".repeat(methodMaxLen - config.method.length)) : "";
+            const sessionId = req.sessionID;
             logger.info(`[${config.method}]${spaceLen} ${req.url}`);
             queueCallFunc([
                 {
@@ -195,25 +196,56 @@ const setRouteListen = (app:Express,constroller: any, route: TypeDefineRoute) =>
             ], null, {
                 throwException: true
             }).then((resp: any) => {
-                res.send(resp.handler);
+                pluginExec(["Request"], "RequestPlugin", "beforSend", resp.handler, req, res, next)
+                    .then((pluginData:any) => {
+                        if(pluginData) {
+                            res.send(pluginData);
+                        } else {
+                            res.send(resp.handler);
+                        }
+                        pluginDestory("Request", sessionId);
+                    }).catch((err) => {
+                        exceptionHandler({
+                            controller: obj,
+                            attribute: route.attrKey,
+                            returnValue: null,
+                            exception: err.exception
+                        }, req, res, next).then((exceptionHandleData) => {
+                            res.status(500);
+                            if(exceptionHandleData) {
+                                res.send(exceptionHandleData);
+                            } else {
+                                res.send({
+                                    statusCode: 500,
+                                    message: "系统内部程序错误。"
+                                });
+                            }
+                            pluginDestory("Request", sessionId);
+                        }).catch(() => {
+                            pluginDestory("Request", sessionId);
+                        });
+                    });
+                
             }).catch((err) => {
-                logger.error(err);
+                logger.error(err.exception);
                 // 错误统一处理
-                const exceptionResult = exceptionHandler({
+                exceptionHandler({
                     controller: obj,
                     attribute: route.attrKey,
                     returnValue: null,
-                    exception: err
-                }, req, res, next);
-                res.status(500);
-                if(!exceptionResult) {
-                    res.send({
-                        statusCode: 500,
-                        message: "系统内部程序错误。"
-                    });
-                } else {
-                    res.send(exceptionResult);
-                }
+                    exception: err.exception
+                }, req, res, next).then((exceptionHandleData) => {
+                    res.status(500);
+                    if(exceptionHandleData) {
+                        res.send(exceptionHandleData);
+                    } else {
+                        res.send({
+                            statusCode: 500,
+                            message: "系统内部程序错误。"
+                        });
+                    }
+                });
+                pluginDestory("Request", sessionId);
             });
         };
     })(constroller, route);

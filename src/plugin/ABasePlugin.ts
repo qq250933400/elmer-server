@@ -23,13 +23,12 @@ export type TypeDataModelProvider = {
     parameterValidate?: (options: TypePluginCallbackOption, value: string|number) => void;
 };
 
-type TypePluginRegisterProviders = {
+export type TypePluginRegisterProviders<T={}> = {
     RequestPlugin: TypeRequestProvider;
     DataModelPlugin: TypeDataModelProvider;
     MysqlPlugin: TypeDataModelProvider;
-};
+} & T;
 
-type TypePluginRegisterOptions= TypePluginRegisterProviders[TypePluginProvider];
 
 /**
  * 定义当前类型控制plugin的生命周期
@@ -38,7 +37,7 @@ type TypePluginRegisterOptions= TypePluginRegisterProviders[TypePluginProvider];
  * */
 export type TypePluginType = "Request" | "Server";
 
-export abstract class ABasePlugin {
+export abstract class ABasePlugin<T={}> {
     static uuid: string = "0b57a8d9-b1ed-1b29-d87f-6e494c5e";
     private registeState: any = {};
     abstract init(): void;
@@ -47,14 +46,16 @@ export abstract class ABasePlugin {
     /** 返回插件类型 */
     abstract getType(): TypePluginType;
 
-    destory?(): void;
-    register(provider: TypePluginProvider, options: TypePluginRegisterOptions): void {
+    destory?(...args: any[]): void;
+
+    protected register<K extends keyof TypePluginRegisterProviders<T>>(provider: K, options: {[P in keyof TypePluginRegisterProviders<T>[K]]: TypePluginRegisterProviders<T>[K][P]}): void {
         if(!this.registeState[provider]) {
             this.registeState[provider] = [];
         }
         this.registeState[provider].push(options);
     }
-    exec(provider: TypePluginProvider, name: keyof TypePluginRegisterProviders[TypePluginProvider], ...args: any[]): void {
+
+    protected exec(provider: TypePluginProvider, name: keyof TypePluginRegisterProviders[TypePluginProvider], ...args: any[]): void {
         const providers = this.registeState[provider] || [];
         let execResult = null;
         for(const options of providers) {
@@ -64,7 +65,8 @@ export abstract class ABasePlugin {
         }
         return execResult;
     }
-    hasProvider(provider: TypePluginProvider): boolean {
+    protected hasProvider(provider: TypePluginProvider): boolean {
         return this.registeState[provider] ? true : false;
     }
 }
+

@@ -1,10 +1,12 @@
-import { Controller, RequestMapping, DataModel,QueryParam,RequestCookie, BindModelSource } from "../../src";
+import { Controller, RequestMapping, DataModel,QueryParam,RequestCookie } from "../../src";
 import { Autowired } from "elmer-common";
 import { GetResponse, RequestHeader, StaticFiles } from "../../src/core";
 import { Request, Response } from "express";
 
-@BindModelSource("sso.mysql")
 class LoginModel extends DataModel {
+    dataSource() {
+        return "sso.mysql";
+    }
     getNews() {
         
     }
@@ -27,16 +29,9 @@ export class Login {
         console.log(page);
         console.log(token);
         console.log(header);
-        return this.ajaxData();
+        return {};
     }
-    ajaxData(): Promise<any> {
-        return this.loginModel.securityQuery((obj) => {
-            return obj.query("loginConfig", {
-                name: "test",
-                status:  0
-            });
-        });
-    }
+
     @RequestMapping("/test", "GET")
     test(@QueryParam str: any, @GetResponse res: Response) {
         console.log(str);

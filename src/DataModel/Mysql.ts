@@ -5,9 +5,11 @@ import { getLogger } from "../logs";
 import { Logger } from "log4js";
 import utils from "../core/utils";
 import * as fs from 'fs';
-import { HtmlParse } from "elmer-virtual-dom";
+import * as path from "path";
+import { HtmlParse, IVirtualElement } from "elmer-virtual-dom";
 import { GetGlobalObject } from "../core/BootApplication";
 import { pluginExec } from "../plugin/PluginExec";
+import { DECORATORS_DATAMODEL_OPTIONS } from "./ADataModel";
 
 export class Mysql extends ADataEngine {
     connection: Connection;
@@ -23,29 +25,30 @@ export class Mysql extends ADataEngine {
     }
     connect(): Promise<any> {
         this.poolObj = this.createConnection();
-        this.logger.debug("1. Start to connect");
+        this.logger.debug("Mysql_1. 创建数据库连接");
         return new Promise<any>((resolve, reject) => {
             this.poolObj.getConnection((err, connection) => {
                 if(err) {
+                    this.logger.debug("Mysql_2.1. 数据库连接失败.", err);
                     reject(err);
                 } else {
                     this.connection = connection;
                     this.isConnected = true;
                     this.connectedDateTime = (new Date()).toLocaleDateString();
-                    this.logger.debug("2. Connected.");
+                    this.logger.debug("Mysql_2.2. 数据库连接成功.");
                     resolve({});
                 }
             });
         });
     }
     dispose(): void {
-        this.logger.debug("3. Start to disconnect");
-        this.poolObj.end((err) => {
+        this.logger.debug("Mysql_3. 释放数据库连接");
+        this.poolObj && this.poolObj.end((err) => {
             if(err) {
                 this.fire("onError", err);
             }
             this.isConnected = false;
-            this.logger.debug("4. disconnected.");
+            this.logger.debug("Mysql_4. 数据库连接已释放.");
         });
     }
     query<T={}, P={}>(connection: Connection, queryData: P): Promise<T> {
@@ -61,21 +64,24 @@ export class Mysql extends ADataEngine {
             });
         });
     }
-    readDataSource(fileName: string): any {
+    readDataSource(options: any, rootPath: string): any {
         try {
-            if(!/\.mysql/.test(fileName)) {
-                throw new Error("Mysql数据层Source文件类型不正确,只支持mysql类型。" + fileName);
-            } else if(!fs.existsSync(fileName)) {
-                throw new Error("Mysql数据层Source文件不存。" + fileName);
-            }
-            const sourceValue = fs.readFileSync(fileName, 'utf8');
-            if(!utils.isEmpty(sourceValue)) {
-                const obj = this.htmlParse.parse(sourceValue);
-                return obj.children;
+            if(utils.isString(options)) {
+                return {
+                    default: this.readSourceFile(path.resolve(rootPath, options as string))
+                };
+            } else if(utils.isObject(options)) {
+                const data: any = {};
+                Object.keys(options).forEach(key => {
+                    const fileName = path.resolve(rootPath, options[key]);
+                    data[key] = this.readSourceFile(fileName);
+                });
+                return data;
             } else {
-                throw new Error("指定数据源文件没有内容。");
+                throw new Error("Data Source not found.");
             }
         }catch(e) {
+            this.logger.error(e);
             this.fire("onError", {
                 sqlMessage: e.message,
                 stack: e.stack,
@@ -96,6 +102,20 @@ export class Mysql extends ADataEngine {
             return exResult;
         });
         return parameterizationResult;
+    }
+    private readSourceFile(fileName: string): IVirtualElement[] {
+        if (!/\.mysql/.test(fileName)) {
+            throw new Error("Mysql数据层Source文件类型不正确,只支持mysql类型。" + fileName);
+        } else if (!fs.existsSync(fileName)) {
+            throw new Error("Mysql数据层Source文件不存。" + fileName);
+        }
+        const sourceValue = fs.readFileSync(fileName, 'utf8');
+        if (!utils.isEmpty(sourceValue)) {
+            const obj = this.htmlParse.parse(sourceValue);
+            return obj.children;
+        } else {
+            throw new Error("指定数据源文件没有内容。");
+        }
     }
     private createConnection(): Pool {
         const loginInfo = {

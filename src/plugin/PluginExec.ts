@@ -1,19 +1,23 @@
-import { TypePluginType, TypePluginProvider } from "./ABasePlugin";
+import { TypePluginType, TypePluginRegisterProviders } from "./ABasePlugin";
 import StoreMemory from "../core/GlobalStore";
 import { CrossSitePlugin } from "./CrossSitePlugin";
 import { MysqlPlugin } from "./MysqlPlugin";
+import { DataModelPlugin } from "./DataModelPlugin";
 import { getLogger } from "../logs";
 import { queueCallFunc, utils } from "elmer-common";
 
+type TypeExecPluginType<T = unknown> = T | TypePluginType;
+
 const CorePlugin = [
     CrossSitePlugin,
-    MysqlPlugin
+    MysqlPlugin,
+    DataModelPlugin
 ];
 
-const pluginState = {};
+const pluginState:any = {};
 
 
-export const pluginExec = function<T={}>(pluginTypes: TypePluginType[], provider: TypePluginProvider, methodName: keyof T, ...args: any[]): Promise<any> {
+export const pluginExec = function<K extends keyof TypePluginRegisterProviders<T>, T={}>(pluginTypes: TypePluginType[], provider: K, methodName: keyof TypePluginRegisterProviders<T>[K], ...args: any[]): Promise<any> {
     const logger = getLogger();
     return new Promise<T>((resolve, reject) => {
         const plugins = StoreMemory.getPlugins() || [];
@@ -109,11 +113,11 @@ export const pluginExec = function<T={}>(pluginTypes: TypePluginType[], provider
     });
 };
 
-export const pluginDestory = (pluginType: TypePluginType): void => {
+export const pluginDestory = <T=unknown>(pluginType: TypeExecPluginType<T>, ...args: any[]): void => {
     const plugins = pluginState[pluginType];
     if(plugins) {
         for(const obj of Object.values(plugins)) {
-            typeof (obj as any).destory === "function" && (obj as any).destory();
+            typeof (obj as any).destory === "function" && (obj as any).destory(...args);
         }
         delete pluginState[pluginType];
     }
@@ -122,7 +126,7 @@ export const pluginDestory = (pluginType: TypePluginType): void => {
  * 初始化特定插件
  * @param pluginTypes 
  */
-export const pluginInit = (pluginTypes: TypePluginType[]) => {
+export const pluginInit = <T=unknown>(pluginTypes: TypeExecPluginType<T>[]) => {
     const plugins = StoreMemory.getPlugins() || [];
     const AllPlugins = [
         ...CorePlugin,

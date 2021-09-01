@@ -11,7 +11,6 @@ import { getApplicationConfig } from "../config";
 import { getLogger } from "../logs";
 import { json } from 'body-parser';
 import { pluginExec, pluginInit } from "../plugin/PluginExec";
-import { TypeRequestProvider } from "../plugin/ABasePlugin";
 import { HtmlParse } from "elmer-virtual-dom";
 import { initConfigSchema } from "../config";
 import { utils } from "elmer-common";
@@ -29,7 +28,7 @@ const crossSiteConfig = (app:Express) => {
         const eventObj = {
             continue: true
         };
-        pluginExec<TypeRequestProvider>(["Request"], "RequestPlugin", "beforeAll", req, res, next, eventObj);
+        pluginExec(["Request"], "RequestPlugin", "beforeAll", req, res, next, eventObj);
         eventObj.continue && next();
     });
     app.use(expressSession({

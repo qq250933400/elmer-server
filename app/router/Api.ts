@@ -1,5 +1,6 @@
 import { Autowired } from "elmer-common";
-import { Controller, RequestMapping, RequestBody, utils, AddInterceptors, Email } from "../../src";
+import { Controller, RequestMapping, RequestBody, utils, AddInterceptors, Email, GetDataModel } from "../../src";
+import { TestModel } from "../model/TestModel";
 
 type TypeRequestBody = {
     text: string;
@@ -27,10 +28,6 @@ export class Api {
     public beforeRequest(@RequestBody body: TypeRequestBody) {
         console.log("BeforeRequestHeader", body);
         this.otherExec();
-        return {
-            statusCode: 500,
-            message: "block by auth"
-        }
     }
     @RequestMapping("/email", "POST")
     sendEmail() {
@@ -44,10 +41,14 @@ export class Api {
 
     @RequestMapping("/upload", "POST")
     uploadTest() {
-        
+    }
+    @RequestMapping("/db/text", "GET")
+    dbTest(
+        @GetDataModel(TestModel) testMD: TestModel
+    ) {
+        testMD.test();
     }
     private otherExec() {
         console.log("otherExec");
     }
 }
-console.log("---++--")

@@ -16,8 +16,6 @@ interface IConfigCrossSiteRule {
 }
 
 export interface IConfigCrossSite {
-    crossSite: {
-        enabled: boolean;
-        rules: IConfigCrossSiteRule[];
-    }
+    enabled: boolean;
+    rules: IConfigCrossSiteRule[];
 }

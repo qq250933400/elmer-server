@@ -1,17 +1,11 @@
 export default {
     properties: {
-        crossSite: {
-            type: "Object",
-            isRequired: true,
-            properties: {
-                rules: {
-                    type: "Array<#crossSiteRule>"
-                },
-                enabled: {
-                    type: "Boolean",
-                    isRequired: true
-                }
-            }
+        rules: {
+            type: "Array<#crossSiteRule>"
+        },
+        enabled: {
+            type: "Boolean",
+            isRequired: true
         }
     },
     dataType: {

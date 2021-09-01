@@ -9,7 +9,7 @@ class AdminRequestPlugin extends ABasePlugin {
             beforSend: (lastData, data) => {
                 console.log("AdminRequestPlugin", lastData, data);
                 lastData.returnValue = data;
-                if(data.statusCode === 200) {
+                if(data?.statusCode === 200) {
                     return data;
                 } else {
                     return {
