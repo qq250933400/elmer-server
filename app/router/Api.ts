@@ -46,7 +46,7 @@ export class Api {
     dbTest(
         @GetDataModel(TestModel) testMD: TestModel
     ) {
-        testMD.test();
+        return testMD.test();
     }
     private otherExec() {
         console.log("otherExec");

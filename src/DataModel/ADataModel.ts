@@ -3,7 +3,8 @@ import { DECORATORS_CLASS_TYPE, DECORATORS_MODEL_ID } from "elmer-common/lib/dec
 import { utils } from "elmer-common";
 
 const dataModel = {
-    objPool: {}
+    objPool: {},
+    dataEngins: {}
 };
 
 export type TypeDefineDataModelOption<S={}, M={}> = {
@@ -51,10 +52,15 @@ export const createDataModel = (ssid: string, Model: new(...args: any[]) => any)
     } else {
         const moduleId = Reflect.getMetadata(DECORATORS_MODEL_ID, Model);
         if(!dataModel.objPool[ssid] || !dataModel.objPool[ssid][moduleId]) {
-            const options = Reflect.getMetadata(DECORATORS_DATAMODEL_OPTIONS, Model);
+            const options:TypeDefineDataModelOption = Reflect.getMetadata(DECORATORS_DATAMODEL_OPTIONS, Model);
             const obj = new Model(ssid, options);
             if(!dataModel.objPool[ssid]) {
                 dataModel.objPool[ssid] = {};
+            }
+            if(options.useModel) {
+                Object.keys(options.useModel).forEach((useKey: string) => {
+                    obj[useKey] = createDataModel(ssid, options.useModel[useKey]);
+                });
             }
             dataModel.objPool[ssid][moduleId] = obj;
             return obj;
@@ -73,5 +79,13 @@ export const destroyDataModel = (ssid: string): void => {
             delete dataModel.objPool[ssid][moduleId];
         });
         delete dataModel.objPool[ssid];
+    }
+};
+
+export const createDataEngine = (ssid: string, fn: Function): any => {
+    if(!dataModel.dataEngins[ssid]) {
+        return fn();
+    } else {
+        return dataModel.dataEngins[ssid];
     }
 }

@@ -26,7 +26,6 @@ export type TypeDataModelProvider = {
 export type TypePluginRegisterProviders<T={}> = {
     RequestPlugin: TypeRequestProvider;
     DataModelPlugin: TypeDataModelProvider;
-    MysqlPlugin: TypeDataModelProvider;
 } & T;
 
 
@@ -35,7 +34,7 @@ export type TypePluginRegisterProviders<T={}> = {
  *   Request随请求结束随即会被销毁
  *   Server随服务常驻内存，全局只会有一个对象
  * */
-export type TypePluginType = "Request" | "Server";
+export type TypePluginType = "Request" | "Server"| "Model";
 
 export abstract class ABasePlugin<T={}> {
     static uuid: string = "0b57a8d9-b1ed-1b29-d87f-6e494c5e";
@@ -55,7 +54,7 @@ export abstract class ABasePlugin<T={}> {
         this.registeState[provider].push(options);
     }
 
-    protected exec(provider: TypePluginProvider, name: keyof TypePluginRegisterProviders[TypePluginProvider], ...args: any[]): void {
+    protected exec<K extends keyof TypePluginRegisterProviders<T>>(provider: K, name: keyof TypePluginRegisterProviders<T>[K], ...args: any[]): void {
         const providers = this.registeState[provider] || [];
         let execResult = null;
         for(const options of providers) {

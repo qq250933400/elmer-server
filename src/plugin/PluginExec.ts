@@ -26,7 +26,7 @@ export const pluginExec = function<K extends keyof TypePluginRegisterProviders<T
             ...plugins
         ];
         const calledPool = [];
-        logger.debug("开始执行插件：", pluginTypes, "方法：", methodName);
+        logger.debug("开始执行插件：", pluginTypes, provider, "方法：", methodName);
         queueCallFunc(AllPlugins as any[], (opt, Plug: new(...args: any[]) => any): any => {
             return new Promise((_resolve, _reject) => {
                 if(!opt.lastResult?.finalResult) {
@@ -77,7 +77,8 @@ export const pluginExec = function<K extends keyof TypePluginRegisterProviders<T
                     }
                     _resolve({
                         finalResult: false,
-                        data: null
+                        data: opt.lastResult?.data || null,
+                        message: "Skip Plugin"
                     });
                 } else {
                     _resolve(opt.lastResult);
@@ -87,7 +88,9 @@ export const pluginExec = function<K extends keyof TypePluginRegisterProviders<T
             throwException: true,
             paramConvert: (PluginFactory: new(...args: any[]) => any) => {
                 if(typeof PluginFactory === "function") {
-                    const initId = "plugin_init_" + utils.guid();
+                    const pType = PluginFactory.prototype.getType();
+                    const pluginId = PluginFactory.prototype.getId();
+                    const initId = pluginId || ["plugin", pType, utils.guid()].join("_");
                     return {
                         id: initId,
                         params: PluginFactory
@@ -104,10 +107,10 @@ export const pluginExec = function<K extends keyof TypePluginRegisterProviders<T
                 });
             }
         }).then((data) => {
-            logger.debug("执行插件    ：", pluginTypes, "方法：", methodName, "结果：", data.finishResult);
+            logger.debug("执行插件    ：", pluginTypes, "方法：", provider, methodName, "结果：", data.finishResult);
             resolve(data.finishResult);
         }).catch((err) => {
-            logger.error("执行插件    ：", pluginTypes, "方法：", methodName, "失败", err);
+            logger.error("执行插件    ：", pluginTypes, "方法：", provider, methodName, "失败", err);
             reject(err.exception);
         });
     });

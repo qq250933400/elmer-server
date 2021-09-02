@@ -8,16 +8,16 @@ export class MysqlPlugin extends ABasePlugin {
     private config: IConfigDB;
 
     init(): void {
-        this.register("MysqlPlugin", {
+        this.register("DataModelPlugin", {
             "parameterization": this.parameterization.bind(this),
             "parameterValidate": this.parameterValidate.bind(this)
         });
     }
     getId(): string {
-        return "eab2c89c-4168-378f-86c2-a08bc03c";
+        return "Mysql_eab2c89c-4168-378f-86c2-a08bc03c";
     }
     getType(): TypePluginType {
-        return "Request";
+        return "Model";
     }
     parameterValidate(options: TypePluginCallbackOption, keyValue: any, id: string,): any {
         const checkData = options.returnValue || keyValue || "";
@@ -67,4 +67,5 @@ export class MysqlPlugin extends ABasePlugin {
         varResult.queryString = queryStr.replace(/^[\r\n\s]*/,"").replace(/[\r\n\s]*$/, "");
         return varResult;
     }
+
 }

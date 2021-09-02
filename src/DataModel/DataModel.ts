@@ -6,8 +6,7 @@ import { GetLogger } from "../logs";
 import { Logger } from "log4js";
 import utils from "../core/utils";
 import { queueCallFunc } from "elmer-common";
-import * as path from "path";
-import { TypeDefineDataModelOption } from "./ADataModel";
+import { TypeDefineDataModelOption, createDataEngine } from "./ADataModel";
 
 type TypeSecurityQueryOptions = {
     connection: any;
@@ -31,7 +30,7 @@ export abstract class DataModel {
     private sourceData: any[];
     constructor(sessionId: string, options: TypeDefineDataModelOption) {
         if(this.config.type === "Mysql") {
-            this.dataEngine = new Mysql();
+            this.dataEngine = createDataEngine(sessionId, () => new Mysql());
         }
         if(utils.isEmpty(sessionId)) {
             throw new Error("DataModel必须使用GetDataModel注解引入");
@@ -41,7 +40,6 @@ export abstract class DataModel {
             this.logger.error(err?.stack || err?.sqlMessage || err?.message || "Unknow error.[DataEngine]");
         });
         this.sourceConfig = options.source;
-        console.log("---", this.sourceConfig);
     }
     destory(): void {
         this.dataEngine.dispose();
@@ -79,7 +77,7 @@ export abstract class DataModel {
             });
         });
     }
-    private async connectionQuery<T={}>(connection: any, id: string, parameters?: any): Promise<T> {
+    private async connectionQuery<T={}>(connection: any, id: string, queryData?: any): Promise<T> {
          return new Promise<T>((resolve, reject) => {
             if(!connection) {
                 reject({
@@ -88,21 +86,37 @@ export abstract class DataModel {
                 });
                 return;
             }
-            let query = this.getQuerySource(id);
-            if(!utils.isEmpty(query)) {
-                this.logger.debug("[DB]", query);
-                const queryValue = this.dataEngine.parameterization(query, parameters, id);
-                this.dataEngine.query(connection, queryValue)
-                    .then((mysqlData) => resolve(mysqlData as any))
-                    .catch((err) => {
-                        reject(err);
-                    });
-            } else {
-                reject({
-                    statusCode: "DB_405",
-                    message: `未实现数据操作${id}`
-                });
-            }
+            queueCallFunc([{
+                    id: "getQueryString",
+                    params: {},
+                    fn: ():any => {
+                        const qstr = this.getQuerySource(id);
+                        if(utils.isEmpty(qstr)) {
+                            throw new Error("指定操作不存在。" + id);
+                        } else {
+                            return qstr;
+                        }
+                    }
+                },
+                {
+                    id: "parameterization",
+                    params: {},
+                    fn: (opt) => this.dataEngine.parameterization(opt.lastResult, queryData, id)
+                }, {
+                    id: "query",
+                    params: {},
+                    fn: (opt):any => {
+                        const queryData: any = opt.lastResult || {};
+                        return this.dataEngine.query(connection, queryData);
+                    }
+                }
+            ], null, {
+                throwException: true
+            }).then((data) => {
+                resolve(data.query);
+            }).catch((err) => {
+                reject(err.exception);
+            });
          });
     }
     private getQuerySource(id: string, type: "Query"|"Insert"|"Update"|"Delete" | "None" = "None"):string {

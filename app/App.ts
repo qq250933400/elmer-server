@@ -7,7 +7,7 @@ class AdminRequestPlugin extends ABasePlugin {
     init(): void {
         this.register("RequestPlugin", {
             beforSend: (lastData, data) => {
-                console.log("AdminRequestPlugin", lastData, data);
+                console.log("AdminRequestPlugin", data);
                 lastData.returnValue = data;
                 if(data?.statusCode === 200) {
                     return data;

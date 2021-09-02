@@ -27,18 +27,23 @@ export class Mysql extends ADataEngine {
         this.poolObj = this.createConnection();
         this.logger.debug("Mysql_1. 创建数据库连接");
         return new Promise<any>((resolve, reject) => {
-            this.poolObj.getConnection((err, connection) => {
-                if(err) {
-                    this.logger.debug("Mysql_2.1. 数据库连接失败.", err);
-                    reject(err);
-                } else {
-                    this.connection = connection;
-                    this.isConnected = true;
-                    this.connectedDateTime = (new Date()).toLocaleDateString();
-                    this.logger.debug("Mysql_2.2. 数据库连接成功.");
-                    resolve({});
-                }
-            });
+            if(!this.connection || !this.isConnected) {
+                this.poolObj.getConnection((err, connection) => {
+                    if(err) {
+                        this.logger.debug("Mysql_2.1. 数据库连接失败.", err);
+                        reject(err);
+                    } else {
+                        this.connection = connection;
+                        this.isConnected = true;
+                        this.connectedDateTime = (new Date()).toLocaleDateString();
+                        this.logger.debug("Mysql_2.2. 数据库连接成功.");
+                        resolve({});
+                    }
+                });
+            } else {
+                this.logger.debug("Mysql_2.3. 从缓存获取连接池")
+                resolve({});
+            }
         });
     }
     dispose(): void {
@@ -96,12 +101,13 @@ export class Mysql extends ADataEngine {
      * @param id 查询过程ID
      * @returns 
      */
-    parameterization(query:any, params:any, id: string): any {
-        const parameterizationResult = pluginExec(["Request"], "MysqlPlugin", "parameterization", query, params, id, (value, key) => {
+    parameterization(query:any, params:any, id: string): Promise<any> {
+        /*
+        (value, key) => {
             const exResult = pluginExec(["Request"], "MysqlPlugin", "parameterValidate", value, id);
             return exResult;
-        });
-        return parameterizationResult;
+        }*/
+        return pluginExec(["Model"], "DataModelPlugin", "parameterization", query, params, id);
     }
     private readSourceFile(fileName: string): IVirtualElement[] {
         if (!/\.mysql/.test(fileName)) {
