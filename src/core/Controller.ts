@@ -155,7 +155,7 @@ const afterResponseHandler = (opt: TypeRequestMethodOptions, req: Request, res: 
 };
 
 const exceptionHandler = (opt: TypeRequestMethodOptions & { exception: Error }, req: Request, res: Response, next: Function):Promise<any> => {
-    return pluginExec(["Request"], "RequestPlugin", "exception", req, res, next);
+    return pluginExec(["Request"], "RequestPlugin", "exception", req, res, opt.exception);
 };
 const setRouteListen = (app:Express,constroller: any, route: TypeDefineRoute) => {
     const logger:Logger = getLogger();
@@ -239,7 +239,7 @@ const setRouteListen = (app:Express,constroller: any, route: TypeDefineRoute) =>
                     if(exceptionHandleData) {
                         res.send(exceptionHandleData);
                     } else {
-                        res.send({
+                        res.send(err.exception || {
                             statusCode: 500,
                             message: "系统内部程序错误。"
                         });
