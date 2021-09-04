@@ -10,6 +10,8 @@ import * as fs from "fs";
 import { md5 } from "./md5";
 import { Logger } from "log4js";
 
+type TypeUploadAction = "Connect" | "Data" | "Complete" | "AfterSave";
+
 export type TypeUploadInfo = {
     fileName: string;
     fileSize: number;
@@ -18,12 +20,15 @@ export type TypeUploadInfo = {
     fileType: string;
     fileId: string;
     fileIndex: number;
-    fileAction: "Connect" | "Data" | "Complete",
+    fileAction: TypeUploadAction,
     lastModified: number;
     fileTempId?: string;
     filePath?: string;
     fileBlockIndex: number;
-}
+};
+export type TypeUploadCallback = (action: TypeUploadAction, info: TypeUploadInfo & {
+    saveFileName?: string
+}) => TypeUploadInfo;
 
 @Service
 export class StaticFiles {
@@ -102,7 +107,7 @@ export class StaticFiles {
             fileBlockIndex: headers["file_block_index"] as any
         };
     }
-    readUploadFile(req: Request, fn): Promise<any> {
+    readUploadFile(req: Request, fn:TypeUploadCallback): Promise<any> {
         return new Promise<any>((resolve, reject) => {
             const info = this.readUploadInfo(req);
             const fileId: string = info.fileTempId;
@@ -114,12 +119,20 @@ export class StaticFiles {
                 const preCheckResult = typeof fn === "function" && fn(info.fileAction, {
                     ...info,
                 });
-                const blockSize = preCheckResult?.blockSize > 1000 ? preCheckResult?.blockSize : 100000;
+                const blockSize = preCheckResult?.fileBlockSize > 1000 ? preCheckResult?.fileBlockSize : 100000;
                 const saveInfo = {
                     ...info,
                     updateData: [],
                     fileBlockSize: blockSize
                 };
+                if(!fs.existsSync(this.serverConfig.temp)) {
+                    this.logger.error("上传文件失败，临时存储路径不存在，请检查设置。");
+                    reject({
+                        statusCode: "UF_500",
+                        message: "服务器内部程序错误"
+                    });
+                    return;
+                }
                 if(!preCheckResult) {
                     
                     fs.writeFileSync(saveInfoFile, JSON.stringify(saveInfo, null, 4), {
@@ -193,7 +206,8 @@ export class StaticFiles {
                         statusCode: 200,
                         message: "文件上传成功",
                         url: saveFileName,
-                        ...(finalResult || {})
+                        ...(finalResult || {}),
+                        type: "AfterSave"
                     });
                 } catch(e) {
                     this.logger.error("保存文件失败，部分临时文件丢失: " , e.stack);
@@ -205,6 +219,10 @@ export class StaticFiles {
                 }
             }
         });
+    }
+    public getFileType(fileName: string): string {
+        const typeM = fileName.match(/(\.[a-z0-9]{1,})$/i);
+        return typeM ? typeM[1] : "";
     }
     private readUploadTempInfo(fileName: string): TypeUploadInfo {
         const txtInfo = fs.readFileSync(fileName, { encoding: "utf-8" });

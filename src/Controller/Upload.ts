@@ -44,7 +44,7 @@ export class Upload {
         @GetRequest body: Request
     ) {
         console.log(this.fileObj.readUploadInfo(body));
-        return this.fileObj.readUploadFile(body, (action) => {
+        return this.fileObj.readUploadFile(body, (action, info):any => {
             console.log(action);
         });
     }

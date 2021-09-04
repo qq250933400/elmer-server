@@ -71,8 +71,7 @@ export abstract class DataModel {
             }).then((data) => {
                 resolve(data.query);
             }).catch((err) => {
-                console.error(err);
-                this.logger.error(err.exception || err.trace || err.message, "[Model_Query]");
+                this.logger.error(err?.exception || err?.trace || err?.message, "[Model_Query]");
                 reject(err.exception);
             });
         });
@@ -107,6 +106,8 @@ export abstract class DataModel {
                     params: {},
                     fn: (opt):any => {
                         const queryData: any = opt.lastResult || {};
+                        this.logger.debug(queryData.queryString);
+                        this.logger.debug(queryData.values);
                         return this.dataEngine.query(connection, queryData);
                     }
                 }
@@ -115,7 +116,7 @@ export abstract class DataModel {
             }).then((data) => {
                 resolve(data.query);
             }).catch((err) => {
-                reject(err.exception);
+                reject(err.exception || err);
             });
          });
     }
