@@ -9,6 +9,7 @@ import * as path from "path";
 import * as fs from "fs";
 import { md5 } from "./md5";
 import { Logger } from "log4js";
+import mediaTypes from "../utils/mediaTypes";
 
 type TypeUploadAction = "Connect" | "Data" | "Complete" | "AfterSave";
 
@@ -18,6 +19,7 @@ export type TypeUploadInfo = {
     fileBlockSize: number;
     fileHash: string;
     fileType: string;
+    fileMediaType: string;
     fileId: string;
     fileIndex: number;
     fileAction: TypeUploadAction,
@@ -92,10 +94,12 @@ export class StaticFiles {
     readUploadInfo(req: Request): TypeUploadInfo {
         const headers = req.headers || {};
         const name = headers["file_name"] as string;
+        const fType = (!utils.isEmpty(headers["file_type"]) ? headers["file_type"] : this.getFileType(name)) as string;
         return {
             fileName: !utils.isEmpty(name) ? decodeURIComponent(name) : "",
             fileSize: headers["file_size"] as any,
-            fileType: headers["file_type"] as string,
+            fileType: fType,
+            fileMediaType: this.getMediaType(fType),
             fileHash: headers["file_hash"] as string,
             fileAction: headers["file_action"] as any,
             fileId: headers["file_id"] as any,
@@ -220,9 +224,23 @@ export class StaticFiles {
             }
         });
     }
+    /**
+     * 根据文件名获取文件后缀
+     * @param fileName 文件名
+     * @returns 
+     */
     public getFileType(fileName: string): string {
         const typeM = fileName.match(/(\.[a-z0-9]{1,})$/i);
         return typeM ? typeM[1] : "";
+    }
+    /**
+     * 根据文件后缀获取文件mediaType
+     * @param type 文件后缀
+     * @returns 
+     */
+    public getMediaType(type: string): string {
+        const typeV = /^\./.test(type) ? type.substr(1) : type;
+        return mediaTypes[typeV] || "plain/text";
     }
     private readUploadTempInfo(fileName: string): TypeUploadInfo {
         const txtInfo = fs.readFileSync(fileName, { encoding: "utf-8" });

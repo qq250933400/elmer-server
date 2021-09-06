@@ -33,7 +33,6 @@ export const getLogger = ():Logger => {
 
 export const GetLogger = () => {
     return (target: any, attr: string): void => {
-        const config: IConfigLog = getApplicationConfig()?.Log;
         const logger = getLogger();
         Object.defineProperty(target, attr, {
             enumerable: true,
