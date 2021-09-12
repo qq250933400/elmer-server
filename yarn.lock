@@ -2280,9 +2280,10 @@
     "core-js" "^2.5.7"
     "zone.js" "^0.8.26"
 
-"elmer-common@file:../elmer-common":
-  "resolved" "file:../elmer-common"
-  "version" "3.1.3"
+"elmer-common@^3.1.6":
+  "integrity" "sha512-xpl16n6tgmHuYlEj/o0EjB7RLq8ZniP5RYB053keiGkbEu+SvYF30MItPc/n4oyYixY0xCF/O87XSJPwuJ+FvQ=="
+  "resolved" "https://registry.npmjs.org/elmer-common/-/elmer-common-3.1.6.tgz"
+  "version" "3.1.6"
   dependencies:
     "@types/core-js" "^2.5.0"
     "ajv" "5.0.0"

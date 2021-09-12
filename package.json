@@ -1,6 +1,6 @@
 {
     "name": "elmer-boot",
-    "version": "1.2.8",
+    "version": "1.2.10",
     "description": "",
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",
@@ -39,7 +39,7 @@
     },
     "dependencies": {
         "cookie-parser": "^1.4.5",
-        "elmer-common": "^3.0.0",
+        "elmer-common": "^3.1.6",
         "elmer-virtual-dom": "^2.0.12",
         "express": "^4.17.1",
         "express-session": "^1.17.2",
