@@ -67,7 +67,7 @@ export const RequestMapping = (path: string|RegExp, type?: TypeRequestType) => {
         if(utils.isEmpty(path)) {
             throw new Error("定义路由地址不能为空")
         }
-        const filterRoutes = defineRoutes.filter((value) => value.url === path);
+        const filterRoutes = defineRoutes.filter((value) => (value.url === path && value.method === type));
         if(!filterRoutes || filterRoutes.length <= 0) {
             defineRoutes.push({
                 uid: routeId,

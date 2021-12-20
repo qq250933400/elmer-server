@@ -6,7 +6,7 @@
         "noFallthroughCasesInSwitch": true,
         "noImplicitAny": false,
         "sourceMap": true,
-        "allowJs": false,
+        "allowJs": true,
         "checkJs": false,
         "module": "commonjs",
         "removeComments": false,
