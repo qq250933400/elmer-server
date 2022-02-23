@@ -13,16 +13,16 @@ export const getLogger = ():Logger => {
                 type: "console"
             },
             cheeseLogs: {
-                type: config.type || "multiFile",
+                type: config?.type || "multiFile",
                 filename: path.resolve(rootPath, "./logs/cheese.log"),
-                category: config.category || "cheese",
+                category: config?.category || "cheese",
                 // 日志文件按日期（天）切割
                 pattern: "yyyy-MM-dd",
                 // 回滚旧的日志文件时，保证以 .log 结尾 （只有在 alwaysIncludePattern 为 false 生效）
                 keepFileExt: true,
                 // 输出的日志文件名是都始终包含 pattern 日期结尾
                 alwaysIncludePattern: true,
-                timeout: config.timeout || 20
+                timeout: config?.timeout || 20
             }
         },
         categories: {
