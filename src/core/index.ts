@@ -1,4 +1,4 @@
 export * from "./BootApplication";
 export * from "./Request";
-export * from "./StaticFiles";
+export * from "../utils/StaticFiles";
 export * from "./Controller";

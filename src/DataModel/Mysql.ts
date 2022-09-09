@@ -3,7 +3,7 @@ import * as mysql from "mysql";
 import { Connection, Pool } from "mysql";
 import { getLogger } from "../logs";
 import { Logger } from "log4js";
-import utils from "../core/utils";
+import utils from "../utils/utils";
 import * as fs from 'fs';
 import * as path from "path";
 import { HtmlParse, IVirtualElement } from "elmer-virtual-dom";

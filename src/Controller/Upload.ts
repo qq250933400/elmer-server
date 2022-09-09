@@ -4,19 +4,19 @@ import {
     AddInterceptors,
     GetRequest
 } from "../core";
-import { GetConfig, GetServerConfig } from "../config";
+import { GetConfig } from "../config";
 import { IConfigServer } from "../config/IConfigServer";
 import { Autowired } from "elmer-common";
 import { Request } from "express";
-import { StaticFiles } from "../core/StaticFiles";
+import { StaticFiles } from "../utils/StaticFiles";
 import * as fs from "fs";
 import * as path from "path";
-import utils from "../core/utils";
+import utils from "../utils/utils";
 
 @Controller("upload")
 export class Upload {
 
-    @GetServerConfig
+    @GetConfig("Server")
     config: IConfigServer;
 
     @Autowired()

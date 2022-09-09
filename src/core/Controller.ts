@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import { Express, Request, Response } from "express";
 import { DECORATORS_CLASS_TYPE, DECORATORS_MODEL_ID } from "elmer-common/lib/decorators/base";
-import utils from './utils';
+import utils from '../utils/utils';
 import { getLogger } from "../logs";
 import { Logger } from "log4js";
 import GlobalStore,{ DECORATOR_MODEL_TYPE, DECORATOR_KEY } from "./GlobalStore";

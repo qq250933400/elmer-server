@@ -1,5 +1,5 @@
 import { Service } from "elmer-common";
-import utils from "../core/utils";
+import utils from "../utils/utils";
 
 interface ISchemaValidate {
     (data: any): void;

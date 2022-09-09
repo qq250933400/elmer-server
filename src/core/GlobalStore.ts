@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { TypeBootApplication } from "./BootApplication";
-import utils from "./utils";
+import utils from "../utils/utils";
 
 type TypeStoreMemory = {
     BootApp: TypeBootApplication;

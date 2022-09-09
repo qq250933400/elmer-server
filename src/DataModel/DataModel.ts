@@ -4,7 +4,7 @@ import { IConfigDB } from "../config/IConfigDB";
 import { Mysql } from "./Mysql";
 import { GetLogger } from "../logs";
 import { Logger } from "log4js";
-import utils from "../core/utils";
+import utils from "../utils/utils";
 import { queueCallFunc } from "elmer-common";
 import { TypeDefineDataModelOption, createDataEngine } from "./ADataModel";
 

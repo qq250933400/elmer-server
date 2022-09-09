@@ -1,4 +1,4 @@
-import utils from "../core/utils";
+import utils from "../utils/utils";
 import { ABasePlugin, TypePluginCallbackOption, TypePluginType } from "./ABasePlugin";
 import { DBConfig } from "../config";
 import { IConfigDB } from "../config/IConfigDB";

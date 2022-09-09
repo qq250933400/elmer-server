@@ -1,7 +1,7 @@
 import { RequestMapping, Controller, RequestBody } from "../core";
 import { Autowired } from "elmer-common";
-import utils from "../core/utils";
-import { StaticFiles } from "../core/StaticFiles";
+import utils from "../utils/utils";
+import { StaticFiles } from "../utils/StaticFiles";
 import * as path from "path";
 
 @Controller("test")

@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import { DefineParamDecorator } from "./DefineDecorator";
 import { Request, Response } from "express";
-import utils from './utils';
+import utils from '../utils/utils';
 import { createDataModel } from "../DataModel/ADataModel";
 
 export const RequestBody = <T={}>(target: Object, methodName: string, paramIndex: number) => {

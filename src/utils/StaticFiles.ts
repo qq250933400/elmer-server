@@ -1,15 +1,14 @@
-import { GetConfig, GetServerConfig } from "../config";
+import { GetConfig, IConfigServer } from "../config";
 import { Service } from "elmer-common";
-import { IConfigServer } from "../config/IConfigServer";
 import { Request } from "express";
-import { UploadStream } from "./UploadStream";
+import { UploadStream } from "../core/UploadStream";
 import { GetLogger } from "../logs";
 import utils from "./utils";
 import * as path from "path";
 import * as fs from "fs";
 import { md5 } from "./md5";
 import { Logger } from "log4js";
-import mediaTypes from "../utils/mediaTypes";
+import mediaTypes from "./mediaTypes";
 
 type TypeUploadAction = "Connect" | "Data" | "Complete" | "AfterSave";
 
@@ -35,10 +34,10 @@ export type TypeUploadCallback = (action: TypeUploadAction, info: TypeUploadInfo
 @Service
 export class StaticFiles {
 
-    @GetConfig("staticPath")
+    @GetConfig("Server", "staticPath")
     private path: string;
 
-    @GetServerConfig
+    @GetConfig("Server")
     private serverConfig: IConfigServer;
 
     @GetLogger()

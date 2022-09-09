@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import utils from "../core/utils";
+import utils from "../utils/utils";
 
 export type TypePluginCallbackOption = {
     returnValue: any
