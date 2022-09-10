@@ -1,10 +1,10 @@
 import utils from "../utils/utils";
 import { ABasePlugin, TypePluginCallbackOption, TypePluginType } from "./ABasePlugin";
-import { DBConfig } from "../config";
+import { GetConfig } from "../config";
 import { IConfigDB } from "../config/IConfigDB";
 
 export class MysqlPlugin extends ABasePlugin {
-    @DBConfig()
+    @GetConfig("DB")
     private config: IConfigDB;
 
     init(): void {

@@ -1,5 +1,5 @@
 import { ADataEngine } from "./ADataEngine";
-import { DBConfig } from "../config";
+import { GetConfig } from "../config";
 import { IConfigDB } from "../config/IConfigDB";
 import { Mysql } from "./Mysql";
 import { GetLogger } from "../logs";
@@ -22,7 +22,7 @@ export abstract class DataModel {
     @GetLogger()
     public logger: Logger;
 
-    @DBConfig()
+    @GetConfig("DB")
     private config: IConfigDB;
 
     private dataEngine: ADataEngine;
@@ -30,7 +30,7 @@ export abstract class DataModel {
     private sourceData: any[];
     constructor(sessionId: string, options: TypeDefineDataModelOption) {
         if(this.config.type === "Mysql") {
-            this.dataEngine = createDataEngine(sessionId, () => new Mysql());
+            // this.dataEngine = createDataEngine(sessionId, () => new Mysql());
         }
         if(utils.isEmpty(sessionId)) {
             throw new Error("DataModel必须使用GetDataModel注解引入");

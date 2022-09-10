@@ -7,7 +7,6 @@ import utils from "../utils/utils";
 import * as fs from 'fs';
 import * as path from "path";
 import { HtmlParse, IVirtualElement } from "elmer-virtual-dom";
-import { GetGlobalObject } from "../core/BootApplication";
 import { pluginExec } from "../plugin/PluginExec";
 import { DECORATORS_DATAMODEL_OPTIONS } from "./ADataModel";
 
@@ -16,10 +15,10 @@ export class Mysql extends ADataEngine {
     poolObj: Pool;
     isConnected: boolean = false;
 
-    @GetGlobalObject("htmlParse")
-    private htmlParse: HtmlParse;
     private logger: Logger;
-    constructor() {
+    constructor(
+        private htmlParse: HtmlParse
+    ) {
         super();
         this.logger = getLogger();
     }

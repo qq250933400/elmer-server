@@ -13,7 +13,7 @@ import EmailConfigSchema from "./config.schema.email";
 import utils from "../utils/utils";
 import { IConfigApplication } from "./IConfigApplication";
 import { TypeConfigOptionKey, IConfigOption } from "./IConfiguration";
-import { CONST_DECORATOR_FOR_CONFIGURATION } from "../data/decoratorKeys";
+import { CONST_DECORATOR_FOR_CONFIGURATION } from "../data";
 
 type TypeConfiguration = IConfigApplication & IConfigOption;
 

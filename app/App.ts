@@ -30,10 +30,7 @@ class AdminRequestPlugin extends ABasePlugin {
 };
 
 @Config("./app/config.yml")
-@Config("./app/corssSite.json", "CrossSite")
-@UsePlugins([
-    AdminRequestPlugin
-])
+@Config("./app/corssSite.json", "Security")
 @BootApplication
 export class App {
     main(): void {

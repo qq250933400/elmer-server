@@ -42,7 +42,7 @@
         "elmer-common": "^3.1.6",
         "elmer-virtual-dom": "^2.0.12",
         "express": "^4.17.1",
-        "express-session": "^1.17.2",
+        "express-session": "^1.17.3",
         "log4js": "^6.3.0",
         "mysql": "^2.18.1",
         "nodemailer": "^6.6.3",
