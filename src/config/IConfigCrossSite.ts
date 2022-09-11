@@ -1,5 +1,5 @@
 type TypeRequestMethod = "GET" | "POST" | "OPTIONS" | "PUT" | "DELETE";
-interface IConfigCrossSiteRoute {
+export interface IConfigCrossSiteRoute {
     path: String;
     method: TypeRequestMethod[];
     allowHeaders: String[];
@@ -7,7 +7,7 @@ interface IConfigCrossSiteRoute {
     headers?: any;
 }
 
-interface IConfigCrossSiteRule {
+export interface IConfigCrossSiteRule {
     allowHeaders: String[];
     domain: String;
     rules: IConfigCrossSiteRoute[];

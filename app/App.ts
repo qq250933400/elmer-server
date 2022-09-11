@@ -1,3 +1,4 @@
+import "reflect-metadata";
 import "./router";
 import { BootApplication, Config, utils } from "../src";
 import { UsePlugins, ABasePlugin, TypePluginType } from "../src/plugin";

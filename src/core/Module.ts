@@ -1,10 +1,11 @@
 import "reflect-metadata";
-import { utils } from "elmer-common";
+import { utils, Schema, queueCallFunc } from "elmer-common";
 import {
     CONST_DECORATOR_FOR_MODULE_TYPE,
     CONST_DECORATOR_FOR_MODULE_CLASSID,
     CONST_DECORATOR_FOR_MODULE_INSTANCEID,
-    CONST_DECORATOR_FORM_MODULE_INIT,
+    CONST_DECORATOR_FOR_MODULE_INIT,
+    CONST_DECORATOR_FOR_MODULE_ON_INIT,
     EnumFactoryModuleType
 } from "../data";
 
@@ -24,15 +25,48 @@ const defineFactoryService = (Target: new(...args: any[]) => any, type: EnumFact
         throw new Error(`多个定义模块类型装饰器不能同时使用.(${typeName})`);
     }
 };
-
+const invokeInit = (Target: new(...args:any[]) => any, obj: any) => {
+    const initCallbacks:Function[] = Reflect.getMetadata(CONST_DECORATOR_FOR_MODULE_INIT, Target) || [];
+    // const instanceId = Reflect.getMetadata(CONST_DECORATOR_FOR_MODULE_INSTANCEID, Target);
+    let index = 0;
+    if(initCallbacks.length > 0) {
+        queueCallFunc(initCallbacks as any[], (opt, fn: Function) => {
+            return fn(obj, opt);
+        }, {
+            throwException: false,
+            paramConvert: (fn) => {
+                index += 1;
+                return {
+                    id: "init_" + index,
+                    params: fn
+                };
+            }
+        }).then(() => {
+            const initData = Reflect.getMetadata(CONST_DECORATOR_FOR_MODULE_ON_INIT, obj);
+            if(initData) {
+                initData.callback.apply(obj, initData.args || []);
+            }
+        }).catch((err) => {
+            throw err;
+        });
+    }
+};
 export const delegateInit = (fn: Function) => {
     return (Target: new(...args: any[]) => any) => {
-        const initCallbacks:Function[] = Reflect.getMetadata(CONST_DECORATOR_FORM_MODULE_INIT, Target) || [];
+        const initCallbacks:Function[] = Reflect.getMetadata(CONST_DECORATOR_FOR_MODULE_INIT, Target) || [];
         initCallbacks.push(fn);
-        Reflect.defineMetadata(CONST_DECORATOR_FORM_MODULE_INIT, initCallbacks, Target);
+        Reflect.defineMetadata(CONST_DECORATOR_FOR_MODULE_INIT, initCallbacks, Target);
     };
 };
-
+export const onInit = (...args: any[]) => {
+    return (target: any, attr: string, value: PropertyDescriptor) => {
+        Reflect.defineMetadata(CONST_DECORATOR_FOR_MODULE_ON_INIT, {
+            args,
+            callback: value.value,
+            name: attr
+        }, target);
+    };
+}
 export const AppService = (Target: new(...args: any[]) => any) => {
     defineFactoryService(Target, EnumFactoryModuleType.AppService);
 };
@@ -55,6 +89,8 @@ export const createInstance = <T={}>(Factory: new(...args:any[]) => T, instanceI
     if (!instancePool[instanceAppId]) {
         instancePool[instanceAppId] = {};
     }
+    /** Before init params should bind instance id, make sure the inject module can got the id */
+    Reflect.defineMetadata(CONST_DECORATOR_FOR_MODULE_INSTANCEID, instanceAppId, Factory);
     const paramsInstance: any[] = paramTypes.map((Fn: new(...args:any) => any) => {
         if(classPool.indexOf(Fn) < 0) {
             throw new Error(`${Fn.name}没有注册`);
@@ -94,21 +130,39 @@ export const createInstance = <T={}>(Factory: new(...args:any[]) => T, instanceI
         } else {
             instance = new Factory(...paramsInstance);
             shouldInit = true;
+            globalObjPool[objId] = instance;
         }
     } else if(classType === EnumFactoryModuleType.RequestService) {
         instance = new Factory(...paramsInstance);
         shouldInit = true;
     } else if(classType === EnumFactoryModuleType.AppService) {
-        instance = new Factory(...paramsInstance);
-        shouldInit = true;
+        const objId = Reflect.getMetadata(CONST_DECORATOR_FOR_MODULE_CLASSID, Factory);
+        if(instancePool[instanceAppId][objId]) {
+            instance = instancePool[instanceAppId][objId];
+        } else {
+            instance = new Factory(...paramsInstance);
+            instancePool[instanceAppId][objId] = instance;
+            shouldInit = true;
+        }
     } else {
         instance(Factory);
         console.error("new error state")
         // instance = new Factory(...paramsInstance);
         // shouldInit = true;
     }
-    Reflect.defineMetadata(CONST_DECORATOR_FOR_MODULE_INSTANCEID, instanceAppId, Factory);
     Reflect.defineMetadata(CONST_DECORATOR_FOR_MODULE_INSTANCEID, instanceAppId, instance);
-    // execLifeCycleOfInit(instance);
+    shouldInit && invokeInit(Factory, instance);
+    if(utils.isEmpty(instanceId) && Factory.name === "SevLogger" ) {
+        throw new Error(Factory.name);
+    }
     return instance;
 }
+
+export const getObjFromInstance = (Target: new(...args: any[]) => any, instance: any, debug?: boolean) => {
+    const instanceId = Reflect.getMetadata(CONST_DECORATOR_FOR_MODULE_INSTANCEID, instance) ||
+        Reflect.getMetadata(CONST_DECORATOR_FOR_MODULE_INSTANCEID, instance.constructor);
+    const targetObj = createInstance(Target, instanceId);
+
+    return targetObj;
+};
+

@@ -1,8 +1,9 @@
 import { Express,Request, Response } from "express";
+import * as express from "express";
 import * as expressSession from "express-session";
 import { utils, queueCallFunc } from "elmer-common";
 import { CONST_DECORATOR_FOR_MODULE_INSTANCEID } from "../data";
-import { createInstance, AppService } from "./Module";
+import { createInstance, AppService, onInit } from "./Module";
 import com from "../utils/utils";
 import { IConfigServer, GetConfig } from "../config";
 import { Logger, GetLogger } from "../logs";
@@ -21,10 +22,10 @@ class Application implements IApplication {
     public serverConfig: IConfigServer;
 
     @GetLogger
-    private logger: Logger;
+    public logger: Logger;
 
     public main(app: Express): void {
-        this.logger.info("application complete");
+        this.logger.info("Method not implements");
     }
 }
 
@@ -40,9 +41,8 @@ const invokeSession = (app: Express) => {
         }
     }));
 }
-const invokeMain = (instance: IApplication, application: IApplication, app: Express): void => {
+const invokeMain = (instance: IApplication, application: Application, app: Express): void => {
     const srcMain = instance.main;
-    const logger:Logger = GetLogger(instance);
     instance.main = () => {
         queueCallFunc([{
                 id: "RunAppliation",
@@ -50,7 +50,7 @@ const invokeMain = (instance: IApplication, application: IApplication, app: Expr
                     return com.invoke(application.main, app);
                 }
             }, {
-                id: "injectMain",
+                id: "ConfigMain",
                 fn: () => {
                     if(typeof srcMain === "function") {
                         return com.invoke(srcMain, app);
@@ -60,17 +60,20 @@ const invokeMain = (instance: IApplication, application: IApplication, app: Expr
                 }
             }
         ]).then(() => {
-            logger.info(`Application runing: ${app}`);
+            application.logger.info(`Application runing: http://${application.serverConfig.host}:${application.serverConfig.port}`);
         }).catch((err) => {
-            logger.error(err);
+            application.logger.error(err.exception || err);
         });
     }
     instance.main(app);
 };
 
-export const invokeApplication = (instance: IApplication, app: Express) => {
-    const instanceId = Reflect.getMetadata(CONST_DECORATOR_FOR_MODULE_INSTANCEID, instance);
-    const application = createInstance(Application, instanceId);
-    invokeSession(app);
-    invokeMain(instance, application, app);
+export const invokeApplication = (ConfigApplication: new(...args:any) => any, ) => {
+    const httpApp:Express = express();
+    const application = createInstance(Application);
+    const instanceId = Reflect.getMetadata(CONST_DECORATOR_FOR_MODULE_INSTANCEID, application);
+    const configApplication = createInstance(ConfigApplication, instanceId);
+    invokeSession(httpApp);
+    invokeMain(configApplication, application, httpApp);
+    return application;
 };

@@ -1,4 +1,4 @@
-import { Service } from "elmer-common";
+import { Service } from "../core/Module";
 import utils from "../utils/utils";
 
 interface ISchemaValidate {

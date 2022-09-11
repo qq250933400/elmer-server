@@ -46,9 +46,6 @@ export const startApplication = <T={}>(App: new(...args:any) => any ): T => {
     if(bootApplicationFlag !== CONST_BOOTAPPLICATION_MODULE_FLAG) {
         throw new Error("Application模块需要使用BootApplication装饰器装载。");
     } else {
-        const instance = createInstance(App);
-        const app = express();
-        invokeApplication(instance, app);
-        return instance;
+        return invokeApplication(App) as any;
     }
 }

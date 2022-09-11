@@ -1,5 +1,6 @@
+import "reflect-metadata";
 import { GetConfig, IConfigServer } from "../config";
-import { Service } from "elmer-common";
+import { Service } from "../core/Module";
 import { Request } from "express";
 import { UploadStream } from "../core/UploadStream";
 import { GetLogger } from "../logs";
@@ -40,8 +41,8 @@ export class StaticFiles {
     @GetConfig("Server")
     private serverConfig: IConfigServer;
 
-    @GetLogger
-    private logger: Logger;
+    // @GetLogger
+    // private logger: Logger;
 
     private rootPath: string;
     constructor() {
@@ -129,10 +130,10 @@ export class StaticFiles {
                     fileBlockSize: blockSize
                 };
                 if(!fs.existsSync(this.serverConfig.temp)) {
-                    this.logger.error("上传文件失败，临时存储路径不存在，请检查设置。");
+                    // this.logger.error("上传文件失败，临时存储路径不存在，请检查设置。");
                     reject({
                         statusCode: "UF_500",
-                        message: "服务器内部程序错误"
+                        message: "上传文件失败，临时存储路径不存在，请检查设置。"
                     });
                     return;
                 }
@@ -167,7 +168,7 @@ export class StaticFiles {
                         message: "临时存储成功"
                     });
                 }).on("error", (err) => {
-                    this.logger.error(err.stack);
+                    // this.logger.error(err.stack);
                     reject({
                         statusCode: "UF_501",
                         message: "写入数据失败"
@@ -186,7 +187,7 @@ export class StaticFiles {
                 const savePath = this.getPath(saveAbsoluteFile);
                 const blockCount = Math.ceil(fileSize / blockSize);
                 try{
-                    this.logger.info("上传文件保存到：", savePath);
+                    // this.logger.info("上传文件保存到：", savePath);
                     this.checkDir(savePath, this.serverConfig.uploadPath);
                     for(let i=0;i<blockCount;i++) {
                         const tmpFile = `${tempId}_${i}.temp`;
@@ -213,7 +214,7 @@ export class StaticFiles {
                         type: "AfterSave"
                     });
                 } catch(e) {
-                    this.logger.error("保存文件失败，部分临时文件丢失: " , e.stack);
+                    // this.logger.error("保存文件失败，部分临时文件丢失: " , e.stack);
                     console.error(e.stack);
                     reject({
                         statusCode: "UF_505",
