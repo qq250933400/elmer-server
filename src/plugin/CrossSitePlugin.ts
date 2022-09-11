@@ -2,7 +2,7 @@ import { ABasePlugin, TypePluginType } from "./ABasePlugin";
 import { Request, Response } from "express";
 import { GetConfig } from "../config";
 import { IConfigCrossSite } from "../config/IConfigCrossSite";
-import { getLogger } from "../logs";
+import { GetLogger } from "../logs";
 
 export class CrossSitePlugin extends ABasePlugin {
     @GetConfig(null, "CrossSite")
@@ -21,7 +21,7 @@ export class CrossSitePlugin extends ABasePlugin {
     private beforeAll({}, req: Request, res: Response, next: Function, opt: any): void {
         const method = req.method;
         const configData = this.config;
-        const logger = getLogger();
+        const logger = GetLogger(this);
         if(configData?.enabled) {
             const origin = req.headers["origin"];
             const isOptions = method === "OPTIONS";

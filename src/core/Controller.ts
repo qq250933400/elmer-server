@@ -2,7 +2,7 @@ import "reflect-metadata";
 import { Express, Request, Response } from "express";
 import { DECORATORS_CLASS_TYPE, DECORATORS_MODEL_ID } from "elmer-common/lib/decorators/base";
 import utils from '../utils/utils';
-import { getLogger } from "../logs";
+import { GetLogger } from "../logs";
 import { Logger } from "log4js";
 import GlobalStore,{ DECORATOR_MODEL_TYPE, DECORATOR_KEY } from "./GlobalStore";
 import DefineDecorator, { GetMethodParams } from "./DefineDecorator";
@@ -158,7 +158,7 @@ const exceptionHandler = (opt: TypeRequestMethodOptions & { exception: Error }, 
     return pluginExec(["Request"], "RequestPlugin", "exception", req, res, opt.exception);
 };
 const setRouteListen = (app:Express,constroller: any, route: TypeDefineRoute) => {
-    const logger:Logger = getLogger();
+    const logger:Logger = GetLogger(constroller);
     const requestListener = ((obj: any, config: TypeDefineRoute) => {
         return function(req: Request, res: Response, next: Function) {
             const methodMaxLen = 7;

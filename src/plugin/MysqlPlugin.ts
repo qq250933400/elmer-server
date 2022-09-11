@@ -4,7 +4,7 @@ import { GetConfig } from "../config";
 import { IConfigDB } from "../config/IConfigDB";
 
 export class MysqlPlugin extends ABasePlugin {
-    @GetConfig("DB")
+    @GetConfig("DataBase")
     private config: IConfigDB;
 
     init(): void {

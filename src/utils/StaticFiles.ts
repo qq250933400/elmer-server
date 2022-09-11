@@ -40,7 +40,7 @@ export class StaticFiles {
     @GetConfig("Server")
     private serverConfig: IConfigServer;
 
-    @GetLogger()
+    @GetLogger
     private logger: Logger;
 
     private rootPath: string;

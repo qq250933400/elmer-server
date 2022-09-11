@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { getLogger } from "../logs";
+import { GetLogger } from "../logs";
 import { DECORATOR_KEY } from "./GlobalStore";
 
 type TypeDecoratorType = "Class" | "Property" | "Method" | "Controller";
@@ -12,7 +12,7 @@ type TypeDecoratorType = "Class" | "Property" | "Method" | "Controller";
  * @param fn 
  */
 export const DefineParamDecorator = (target: any, methodName: string, paramIndex: number, fn:Function) => {
-    const logger = getLogger();
+    const logger = GetLogger(target);
     try {
         const key = "PARAM_DECORATOR_" + DECORATOR_KEY;
         const paramDecorators = Reflect.getMetadata(key, target) || {};
@@ -42,7 +42,7 @@ export const GetMethodParams = (target: any, methodName: string, ...args:any[]) 
 }
 
 export default (fn:Function, factory: new(...args: any[]) => any, type: TypeDecoratorType = "Class") => {
-    const logger = typeof getLogger === "function" ? getLogger () : {error: (v) =>console.log(v)};
+    const logger = typeof GetLogger === "function" ? GetLogger (factory) : {error: (v) =>console.log(v)};
     try {
         Reflect.defineMetadata("DecoratorType", type || "Class", factory);
         fn();

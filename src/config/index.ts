@@ -29,7 +29,7 @@ const readConfigData = (fileName: string):any => {
 const loadConfigSchema = () => {
     const schemaObj = GlobalStore.getService<Schema>(Schema);
     schemaObj.addSchema("Application", ApplicationConfigSchema);
-    schemaObj.addSchema("DB", DBConfigSchema);
+    schemaObj.addSchema("DataBase", DBConfigSchema);
     schemaObj.addSchema("Server", ServerConfigSchema);
     schemaObj.addSchema("Log", LogConfigSchema);
     schemaObj.addSchema("Security", CrossSiteConfigSchema);
@@ -72,6 +72,7 @@ export const Config = (fileName: string, name?: TypeConfigOptionKey, schema?: an
         } else {
             throw new Error("指定配置文件不存在。");
         }
+        console.error("Config--Application", name);
     }
 };
 

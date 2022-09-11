@@ -69,7 +69,7 @@ export class Email {
     @GetConfig(null, "Email")
     private config: IConfigEmail;
 
-    @GetLogger()
+    @GetLogger
     private logger: Logger;
 
     send(option: TypeSendEmailOption):Promise<any> {

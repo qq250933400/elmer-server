@@ -3,7 +3,7 @@ import StoreMemory from "../core/GlobalStore";
 import { CrossSitePlugin } from "./CrossSitePlugin";
 import { MysqlPlugin } from "./MysqlPlugin";
 import { DataModelPlugin } from "./DataModelPlugin";
-import { getLogger } from "../logs";
+import { GetLogger } from "../logs";
 import { queueCallFunc, utils } from "elmer-common";
 
 type TypeExecPluginType<T = unknown> = T | TypePluginType;
@@ -18,7 +18,7 @@ const pluginState:any = {};
 
 
 export const pluginExec = function<K extends keyof TypePluginRegisterProviders<T>, T={}>(pluginTypes: TypePluginType[], provider: K, methodName: keyof TypePluginRegisterProviders<T>[K], ...args: any[]): Promise<any> {
-    const logger = getLogger();
+    const logger = GetLogger(self);
     return new Promise<T>((resolve, reject) => {
         const plugins = StoreMemory.getPlugins() || [];
         const AllPlugins = [

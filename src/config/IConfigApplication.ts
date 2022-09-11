@@ -5,7 +5,7 @@ import { IConfigEmail } from "./IConfigEmail";
 
 export interface IConfigApplication {
     Server: IConfigServer;
-    DB: IConfigDB;
+    DataBase: IConfigDB;
     Log: IConfigLog;
     Email: IConfigEmail;
 }

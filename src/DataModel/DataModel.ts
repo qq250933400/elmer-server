@@ -19,10 +19,10 @@ export abstract class DataModel {
 
     public readonly ssid: string;
 
-    @GetLogger()
+    @GetLogger
     public logger: Logger;
 
-    @GetConfig("DB")
+    @GetConfig("DataBase")
     private config: IConfigDB;
 
     private dataEngine: ADataEngine;

@@ -4,6 +4,7 @@ import {
     CONST_DECORATOR_FOR_MODULE_TYPE,
     CONST_DECORATOR_FOR_MODULE_CLASSID,
     CONST_DECORATOR_FOR_MODULE_INSTANCEID,
+    CONST_DECORATOR_FORM_MODULE_INIT,
     EnumFactoryModuleType
 } from "../data";
 
@@ -22,7 +23,15 @@ const defineFactoryService = (Target: new(...args: any[]) => any, type: EnumFact
     } else {
         throw new Error(`多个定义模块类型装饰器不能同时使用.(${typeName})`);
     }
-}
+};
+
+export const delegateInit = (fn: Function) => {
+    return (Target: new(...args: any[]) => any) => {
+        const initCallbacks:Function[] = Reflect.getMetadata(CONST_DECORATOR_FORM_MODULE_INIT, Target) || [];
+        initCallbacks.push(fn);
+        Reflect.defineMetadata(CONST_DECORATOR_FORM_MODULE_INIT, initCallbacks, Target);
+    };
+};
 
 export const AppService = (Target: new(...args: any[]) => any) => {
     defineFactoryService(Target, EnumFactoryModuleType.AppService);
@@ -93,8 +102,10 @@ export const createInstance = <T={}>(Factory: new(...args:any[]) => T, instanceI
         instance = new Factory(...paramsInstance);
         shouldInit = true;
     } else {
-        instance = new Factory(...paramsInstance);
-        shouldInit = true;
+        instance(Factory);
+        console.error("new error state")
+        // instance = new Factory(...paramsInstance);
+        // shouldInit = true;
     }
     Reflect.defineMetadata(CONST_DECORATOR_FOR_MODULE_INSTANCEID, instanceAppId, Factory);
     Reflect.defineMetadata(CONST_DECORATOR_FOR_MODULE_INSTANCEID, instanceAppId, instance);

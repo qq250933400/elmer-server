@@ -1,3 +1,4 @@
+import "reflect-metadata";
 /**
  * 定义模块类型
  */
@@ -9,3 +10,7 @@ export enum EnumFactoryModuleType {
     /** 当超过一个应用程序在运行的时候全局只有一个object对象 */
     GlobalService
 }
+
+// export const config = createStateActions("config", {
+    
+// });

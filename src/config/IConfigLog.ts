@@ -4,4 +4,5 @@ export interface IConfigLog {
     timeout?: number;
     extension?: string;
     category?: string;
+    savePath?: string;
 }

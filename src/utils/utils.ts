@@ -257,7 +257,16 @@ const fildMD5Async = (fileName: string): string|null|undefined => {
         return fHash.digest("hex");
     }
 }
-
+const invoke = (fn: Function, ...args: any[]): Promise<any> => {
+    return new Promise((resolve, reject) => {
+        const fResult = fn(...args);
+        if(isPromise(fResult)) {
+            fResult.then(resolve).catch(reject);
+        } else {
+            resolve(fResult);
+        }
+    });
+}
 export default {
     aseEncode,
     aseDecode,
@@ -281,5 +290,6 @@ export default {
     toUri,
     toQuery,
     setValue,
-    md5
+    md5,
+    invoke
 };

@@ -4,8 +4,8 @@ export default {
             type: '#Server',
             isRequired: true
         },
-        DB: {
-            type: '#DB',
+        DataBase: {
+            type: '#DataBase',
             isRequired: false
         },
         Log: {
