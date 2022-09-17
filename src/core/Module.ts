@@ -9,6 +9,14 @@ import {
     EnumFactoryModuleType
 } from "../data";
 
+type TypeCreateInstanceOptions = {
+    args: any[];
+    classType: EnumFactoryModuleType;
+    shouldInit: boolean;
+    uid: string;
+};
+type TypeCreateInstanceCallback = <T={}>(factory: new(...args:any[]) => any, option: TypeCreateInstanceOptions) => T;
+
 const instancePool: any = {};
 const classPool: any[] = [];
 const globalObjPool: any = {};
@@ -80,11 +88,12 @@ export const Service = (Target: new(...args: any[]) => any) => {
 };
 
 
-export const createInstance = <T={}>(Factory: new(...args:any[]) => T, instanceId?: string):T => {
+export const createInstance = <T={}>(Factory: new(...args:any[]) => T, instanceId?: string, callback?: TypeCreateInstanceCallback):T => {
     const instanceAppId: string = instanceId || "app_" + utils.guid();
     const paramTypes: Function[] = Reflect.getMetadata("design:paramtypes", Factory) || [];
     // -------
     const classType: EnumFactoryModuleType = Reflect.getMetadata(CONST_DECORATOR_FOR_MODULE_TYPE, Factory);
+    const classId = Reflect.getMetadata(CONST_DECORATOR_FOR_MODULE_CLASSID, Factory);
     let instance: any, shouldInit = false;
     if (!instancePool[instanceAppId]) {
         instancePool[instanceAppId] = {};
@@ -101,10 +110,10 @@ export const createInstance = <T={}>(Factory: new(...args:any[]) => T, instanceI
                 if(globalObjPool[objId]) {
                     return globalObjPool[objId];
                 } else {
-                    return createInstance(Fn as any, instanceAppId);
+                    return createInstance(Fn as any, instanceAppId, callback);
                 }
             } else if(classType === EnumFactoryModuleType.RequestService) {
-                return createInstance(Fn as any, instanceAppId);
+                return createInstance(Fn as any, instanceAppId, callback);
             } else if(classType === EnumFactoryModuleType.AppService) {
                 const objId = Reflect.getMetadata(CONST_DECORATOR_FOR_MODULE_CLASSID, Fn);
                 if(instancePool[instanceAppId] && instancePool[instanceAppId][objId]) {
@@ -113,7 +122,7 @@ export const createInstance = <T={}>(Factory: new(...args:any[]) => T, instanceI
                     if(!instancePool[instanceAppId]) {
                         instancePool[instanceAppId] = {};
                     }
-                    const obj = createInstance(Fn as any, instanceAppId);
+                    const obj = createInstance(Fn as any, instanceAppId, callback);
                     instancePool[instanceAppId][objId] = obj;
                     return obj;
                 }
@@ -124,44 +133,56 @@ export const createInstance = <T={}>(Factory: new(...args:any[]) => T, instanceI
     });
    
     if(classType === EnumFactoryModuleType.GlobalService) {
-        const objId = Reflect.getMetadata(CONST_DECORATOR_FOR_MODULE_CLASSID, Factory);
-        if(globalObjPool[objId]) {
-            instance = globalObjPool[objId];
+        if(globalObjPool[classId]) {
+            instance = globalObjPool[classId];
         } else {
             instance = new Factory(...paramsInstance);
             shouldInit = true;
-            globalObjPool[objId] = instance;
+            globalObjPool[classId] = instance;
         }
     } else if(classType === EnumFactoryModuleType.RequestService) {
-        instance = new Factory(...paramsInstance);
-        shouldInit = true;
+        const reqInitEvent = {
+            args: paramsInstance,
+            shouldInit: false,
+            classType,
+            uid: classId
+        };
+        instance = typeof callback === "function" ? callback(Factory, reqInitEvent) : null;
+        shouldInit = reqInitEvent.shouldInit;
+        if(!instance) {
+            throw new Error("Failed to initialize request factory");
+        }
     } else if(classType === EnumFactoryModuleType.AppService) {
-        const objId = Reflect.getMetadata(CONST_DECORATOR_FOR_MODULE_CLASSID, Factory);
-        if(instancePool[instanceAppId][objId]) {
-            instance = instancePool[instanceAppId][objId];
+        if(instancePool[instanceAppId][classId]) {
+            instance = instancePool[instanceAppId][classId];
         } else {
             instance = new Factory(...paramsInstance);
-            instancePool[instanceAppId][objId] = instance;
+            instancePool[instanceAppId][classId] = instance;
             shouldInit = true;
         }
     } else {
-        instance(Factory);
-        console.error("new error state")
-        // instance = new Factory(...paramsInstance);
-        // shouldInit = true;
+        const reqInitEvent = {
+            args: paramsInstance,
+            shouldInit: false,
+            classType,
+            uid: classId
+        };
+        instance = typeof callback === "function" ? callback(Factory, reqInitEvent) : null;
+        shouldInit = reqInitEvent.shouldInit;
+        if(!instance) {
+            instance = Factory;
+        }
     }
     Reflect.defineMetadata(CONST_DECORATOR_FOR_MODULE_INSTANCEID, instanceAppId, instance);
     shouldInit && invokeInit(Factory, instance);
-    if(utils.isEmpty(instanceId) && Factory.name === "SevLogger" ) {
-        throw new Error(Factory.name);
-    }
+    
     return instance;
 }
 
-export const getObjFromInstance = (Target: new(...args: any[]) => any, instance: any, debug?: boolean) => {
+export const getObjFromInstance = (Target: new(...args: any[]) => any, instance: any, callback?: TypeCreateInstanceCallback) => {
     const instanceId = Reflect.getMetadata(CONST_DECORATOR_FOR_MODULE_INSTANCEID, instance) ||
         Reflect.getMetadata(CONST_DECORATOR_FOR_MODULE_INSTANCEID, instance.constructor);
-    const targetObj = createInstance(Target, instanceId);
+    const targetObj = createInstance(Target, instanceId, callback);
 
     return targetObj;
 };

@@ -13,6 +13,7 @@ import utils from "../utils/utils";
 export class SevLogger {
 
     public logger!: Log4js;
+    public logPath!: string;
 
     @GetConfig("Log")
     private config: IConfigLog;
@@ -20,13 +21,14 @@ export class SevLogger {
     constructor(
         private fileObj: StaticFiles
     ) {
-        let logger: any = null;
+        let logger: Log4js = null;
         Object.defineProperty(this, "logger", {
             get: () => {
                 if(!logger) {
-                    const rootPath = path.resolve(process.cwd(), this.config?.savePath || "");
-                    const logFileName = path.resolve(rootPath, "./logs/cheese.log");
+                    const rootPath = path.resolve(process.cwd(), this.config?.savePath || "./logs");
+                    const logFileName = path.resolve(rootPath, "./cheese.log");
                     const logPath = this.fileObj.getPath(logFileName);
+                    this.logPath = logPath;
                     this.fileObj.checkDir(logPath, process.cwd());
                     log4js.configure({
                         appenders: {
@@ -50,7 +52,9 @@ export class SevLogger {
                             default: {appenders: ['console', 'cheeseLogs'], level: this.config?.level || "info" }
                         }
                     });
+                    console.log(logFileName);
                     logger = log4js.getLogger("cheese");
+                    logger.info("Log Path: " + logPath);
                     return logger;
                 } else {
                     return logger;

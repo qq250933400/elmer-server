@@ -1,5 +1,5 @@
 import { Autowired } from "elmer-common";
-import { Controller, RequestMapping, RequestBody, utils, AddInterceptors, Email, GetDataModel } from "../../src";
+import { Controller, RequestMapping, GetRequestBody, utils, Email } from "../../src";
 import { TestModel } from "../model/TestModel";
 
 type TypeRequestBody = {
@@ -19,16 +19,16 @@ export class Api {
         };
     }
     @RequestMapping("/encode", "POST")
-    encode(@RequestBody body: TypeRequestBody) {
-        console.log(this, body, "----");
+    encode(@GetRequestBody() body: TypeRequestBody) {
+        console.log(body, "----");
         return utils.aseEncode(body.text);
     }
 
-    @AddInterceptors
-    public beforeRequest(@RequestBody body: TypeRequestBody) {
-        console.log("BeforeRequestHeader", body);
-        this.otherExec();
-    }
+    // @AddInterceptors
+    // public beforeRequest(@RequestBody body: TypeRequestBody) {
+    //     console.log("BeforeRequestHeader", body);
+    //     this.otherExec();
+    // }
     @RequestMapping("/email", "POST")
     sendEmail() {
         return this.email.send({
@@ -43,11 +43,6 @@ export class Api {
     uploadTest() {
     }
     @RequestMapping("/db/text", "GET")
-    dbTest(
-        @GetDataModel(TestModel) testMD: TestModel
-    ) {
-        return testMD.test();
-    }
     private otherExec() {
         console.log("otherExec");
     }

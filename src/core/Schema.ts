@@ -1,11 +1,33 @@
 import { Service } from "../core/Module";
 import utils from "../utils/utils";
 
+type TypeSchemaPropertyType = "String" | "Array" | "Object" | "Boolean" | "Number";
+
 interface ISchemaValidate {
     (data: any): void;
     (data: any, schema: any): void;
     (data: any, schema: any, name: string): void;
     (data: any, name: string): void;
+}
+
+interface ISchemaProperty<T={},Callbacks={}> {
+    type: TypeSchemaPropertyType | TypeSchemaPropertyType[] | string;
+    isRequired?: boolean;
+    defaultValue?: any;
+    format?: keyof Callbacks;
+}
+interface ISchemaProperties<T={}, Callbacks={}> {
+    properties: {
+        [ P in keyof T]?: ISchemaProperty<T[P], Callbacks> & {
+            properties?: ISchemaProperties<T[P], Callbacks>
+        }
+    };
+}
+
+interface ISchemaConfig<T={}, DataType={}, Callbacks={}> {
+    properties: ISchemaProperties<T, Callbacks>;
+    dataType?: ISchemaProperties<DataType, Callbacks>;
+    callbacks?: Callbacks;
 }
 
 abstract class ASchema {
@@ -36,6 +58,9 @@ export class Schema extends ASchema{
     }
     getSchemas() {
         return this.schemaConfig;
+    }
+    format<T={}, DataType={}, Callbacks={}>(data: any, schema: ISchemaConfig<T, DataType, Callbacks>): void {
+        console.log("security:", schema);
     }
     private doValidate(data: any, schema: any, name?: string, prefixKey?: string[]): boolean {
         const properties = schema?.properties;

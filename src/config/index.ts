@@ -68,6 +68,7 @@ export const Config = (fileName: string, name?: TypeConfigOptionKey, schema?: an
                 schemaObj.validate(configData, saveName);
                 if(name === "Security") {
                     stateActions.Security.set(configData);
+                    schemaObj.format(configData, schemaObj.getSchemas().Security);
                 } else if(utils.isEmpty(name)) {
                     stateActions.Server.set(configData.Server);
                     stateActions.DataBase.set(configData.DataBase);
