@@ -2,6 +2,7 @@ import { Service } from "../core/Module";
 import utils from "../utils/utils";
 
 type TypeSchemaPropertyType = "String" | "Array" | "Object" | "Boolean" | "Number";
+type TypeSchemaDataType = TypeSchemaPropertyType | (TypeSchemaPropertyType[]) | String | RegExp;
 
 interface ISchemaValidate {
     (data: any): void;
@@ -11,7 +12,7 @@ interface ISchemaValidate {
 }
 
 interface ISchemaProperty<T={},Callbacks={}> {
-    type: TypeSchemaPropertyType | TypeSchemaPropertyType[] | string;
+    type: TypeSchemaDataType;
     isRequired?: boolean;
     defaultValue?: any;
     format?: keyof Callbacks;
@@ -60,7 +61,93 @@ export class Schema extends ASchema{
         return this.schemaConfig;
     }
     format<T={}, DataType={}, Callbacks={}>(data: any, schema: ISchemaConfig<T, DataType, Callbacks>): void {
-        console.log("security:", schema);
+        const finalData: any = {};
+        if(schema && utils.isObject(data) && utils.isObject(schema.properties)) {
+            const formatCallbacks: any = schema.callbacks || {};
+            const useSchemaData: any = {
+                ...this.schemaConfig,
+                ...(schema.dataType || {})
+            }
+            Object.keys(schema.properties).forEach((attrKey: string) => {
+                const attr: ISchemaProperty<any, Callbacks> = schema.properties[attrKey];
+                const attrType: TypeSchemaDataType = attr.type as any;
+                const attrArrayTypeMatch = utils.isString(attrType) ? /^Array\<#([a-zA-Z0-9_-]{1,})\>$/.exec(attrType as any) : null;
+                const attrTypeMatch = utils.isString(attrType) ? /#([a-zA-Z0-9_-]{1,})$/i.exec(attrType as any) : null;
+                const attrArrayMatch = utils.isString(attrType) ? /^Array\<([a-zA-Z0-9_-]{1,})\>$/.exec(attrType as any) : null;
+                let attrValue = data[attrKey];
+                if(utils.isEmpty(attrValue)) {
+                    attrValue = attr.defaultValue;
+                }
+                if(!utils.isEmpty(attr.format)) {
+                    const fn = formatCallbacks[attr.format] as Function;
+                    if(typeof fn === "function") {
+                        attrValue = fn(attrValue);
+                    }
+                }
+                if(
+                    attrType === "Array" ||
+                    attrType === "Number" ||
+                    attrType === "Boolean" ||
+                    attrType === "String" ||
+                    utils.isRegExp(attrType)
+                ) {
+                    finalData[attrKey] = attrValue;
+                } else if(attrArrayTypeMatch) {
+                    const useType = attrArrayTypeMatch[1];
+                    const useSchema: ISchemaProperty<any, Callbacks> = useSchemaData[useType];
+                    const useAttrType: TypeSchemaDataType = useSchema.type as any;
+                    const forEachData = attrValue || [];
+                    const forResultData = utils.isArray(forEachData) ? [] : {};
+                    if(useSchema) {
+                        for(const forKey in forEachData) {
+                            const forData = forEachData[forKey];
+                            const forValue: any = this.format({
+                                formatResult: forData
+                            }, {
+                                properties: ({
+                                    formatResult: (useSchema as any)
+                                }) as any,
+                                dataType: schema.dataType,
+                                callbacks: schema.callbacks
+                            });
+                            forResultData[forKey] = forValue.formatResult;
+                        }
+                        
+                    }
+                    finalData[attrKey] = forResultData;
+                } else if(attrTypeMatch) {
+                    const useType = attrArrayTypeMatch[1];
+                    const useSchema: ISchemaProperty<any, Callbacks> = useSchemaData[useType];
+                    console.log(useSchema);
+                    const useData: any = this.format({
+                        formatResult: attrValue
+                    }, {
+                        dataType: schema.dataType,
+                        callbacks: schema.callbacks,
+                        properties: ({
+                            formatResult: useSchema
+                        }) as any
+                    });
+                    finalData[attrKey] = useData.formatResult;
+                } else if(attrArrayMatch) {
+                    finalData[attrKey] = attrValue;
+                } else if(attrType === "Object") {
+                    if((attr as any).properties) {
+                        const formatData = this.format(attrValue || {}, {
+                            properties: (attr as any).properties,
+                            callbacks: schema.callbacks,
+                            dataType: schema.dataType
+                        });
+                        finalData[attrKey] = formatData;
+                    } else {
+                        finalData[attrKey] = attrValue;
+                    }
+                } else {
+                    finalData[attrKey] = attrValue;
+                }
+            });
+        }
+        return finalData;
     }
     private doValidate(data: any, schema: any, name?: string, prefixKey?: string[]): boolean {
         const properties = schema?.properties;

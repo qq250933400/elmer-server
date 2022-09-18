@@ -37,7 +37,7 @@ const loadConfigSchema = (Target: new(...args: any[]) => any) => {
     schemaObj.addSchema("Email", EmailConfigSchema);
     return {
         Application: ApplicationConfigSchema,
-        DB: DBConfigSchema,
+        DataBase: DBConfigSchema,
         Server: ServerConfigSchema,
         Log: LogConfigSchema,
         Security: CrossSiteConfigSchema,
@@ -67,13 +67,12 @@ export const Config = (fileName: string, name?: TypeConfigOptionKey, schema?: an
                 }
                 schemaObj.validate(configData, saveName);
                 if(name === "Security") {
-                    stateActions.Security.set(configData);
-                    schemaObj.format(configData, schemaObj.getSchemas().Security);
+                    stateActions.Security.set(schemaObj.format(configData, schemaObj.getSchemas().Security) as any);
                 } else if(utils.isEmpty(name)) {
-                    stateActions.Server.set(configData.Server);
-                    stateActions.DataBase.set(configData.DataBase);
-                    stateActions.Log.set(configData.Log);
-                    stateActions.Email.set(configData.Email);
+                    stateActions.Server.set(schemaObj.format(configData?.Server, schemaObj.getSchemas().Server) as any);
+                    stateActions.DataBase.set(schemaObj.format(configData?.DataBase, schemaObj.getSchemas().DataBase) as any);
+                    stateActions.Log.set(schemaObj.format(configData?.Log, schemaObj.getSchemas().Log) as any);
+                    stateActions.Email.set(schemaObj.format(configData?.Email, schemaObj.getSchemas().Email) as any);
                 }
             } else {
                 throw new Error("指定配置文件不存在。");

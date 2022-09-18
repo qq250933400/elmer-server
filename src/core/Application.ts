@@ -30,7 +30,7 @@ class Application implements IApplication {
     constructor(
         private controller: RouterController
     ) {
-        console.log("controller", this.controller);
+        // this.logger.info(`Application init`);
     }
     public main(app: Express): any {
         return new Promise((resolve) => {

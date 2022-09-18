@@ -2,7 +2,8 @@ import "reflect-metadata";
 import { utils } from "elmer-common";
 import {
     CONST_DECORATOR_CONTROLLER_ROUTER,
-    CONST_DECORATOR_CONTROLLER_NAMESPACE
+    CONST_DECORATOR_CONTROLLER_NAMESPACE,
+    CONST_DECORATOR_FOR_MODULE_CLASSID
 } from "../data";
 
 export type TypeRequestMethod = "GET" | "POST" | "PUT" | "DELETE" | "OPTIONS";
@@ -22,7 +23,12 @@ export const getControllers = () => controllers;
 
 export const Controller = (namespace?: string) => {
     return (Target: new(...args: any[]) => any) => {
+        const uid = Reflect.getMetadata(CONST_DECORATOR_FOR_MODULE_CLASSID, Target);
         Reflect.defineMetadata(CONST_DECORATOR_CONTROLLER_NAMESPACE, namespace, Target);
+        if(utils.isEmpty(uid)) {
+            const newUID = "RequestController_" + utils.guid();
+            Reflect.defineMetadata(CONST_DECORATOR_FOR_MODULE_CLASSID, newUID, Target);
+        }
         if(controllers.indexOf(Target) < 0) {
             controllers.push(Target);
         } else {
