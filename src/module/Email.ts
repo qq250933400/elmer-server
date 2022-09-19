@@ -1,10 +1,12 @@
-import { Service, utils } from "elmer-common";
+import { utils } from "elmer-common";
 import { Logger } from "log4js";
 import { createTransport, Transporter } from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
+import * as smtpTransport from "nodemailer-smtp-transport";
 import { GetConfig, IConfigEmail } from "../config";
 import { GetLogger } from "../logs";
-import * as smtpTransport from "nodemailer-smtp-transport";
+import { AppService } from "../core/Module";
+
 
 type TypeSendEmailOption = {
     toUsers: string[];
@@ -64,9 +66,9 @@ const errorStatus = {
     "554 IP in blacklist": "该IP不在网易允许的发送地址列表里。"
 };
 
-@Service
+@AppService
 export class Email {
-    @GetConfig(null, "Email")
+    @GetConfig("Email")
     private config: IConfigEmail;
 
     @GetLogger

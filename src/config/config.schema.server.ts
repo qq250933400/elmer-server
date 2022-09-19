@@ -14,15 +14,18 @@ export default {
         },
         staticPath: {
             type: "String",
-            defaultValue: "./assets"
+            defaultValue: "./assets",
+            format: "formatPath"
         },
         uploadPath: {
             type: "String",
-            defaultValue: "./assets/upload"
+            defaultValue: "./assets/upload",
+            format: "formatPath"
         },
         temp: {
             type: "String",
-            defaultValue: "./temp"
+            defaultValue: "./temp",
+            format: "formatPath"
         }
     }
 }

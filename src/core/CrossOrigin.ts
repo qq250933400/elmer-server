@@ -4,7 +4,6 @@ import { IMiddleware } from "./IMiddleware";
 import { Express, Request, Response } from "express";
 import { GetConfig, IConfigCrossSite, IConfigServer } from "../config";
 import { GetLogger, Logger } from "../logs";
-import { Schema } from "./Schema";
 
 @AppService
 export class CrossOrigin implements IMiddleware {
@@ -17,11 +16,6 @@ export class CrossOrigin implements IMiddleware {
     @GetLogger
     private logger: Logger;
 
-    constructor(
-        private schema: Schema
-    ) {
-        // const data = this.schema.format({}, )
-    }
     use(app: Express): void {
         app.use("*", (req: Request, res: Response, next: Function) => {
             const method = req.method;

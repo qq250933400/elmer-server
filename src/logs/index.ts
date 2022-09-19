@@ -52,7 +52,6 @@ export class SevLogger {
                             default: {appenders: ['console', 'cheeseLogs'], level: this.config?.level || "info" }
                         }
                     });
-                    console.log(logFileName);
                     logger = log4js.getLogger("cheese");
                     logger.info("Log Path: " + logPath);
                     return logger;

@@ -6,7 +6,8 @@ export default {
         },
         savePath: {
             type: "String",
-            default: "./temp/logs"
+            default: "./temp/logs",
+            format: "formatPath"
         }
     }
 };
