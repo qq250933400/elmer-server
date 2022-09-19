@@ -11,21 +11,19 @@ interface ISchemaValidate {
     (data: any, name: string): void;
 }
 
-interface ISchemaProperty<T={},Callbacks={}> {
+interface ISchemaProperty<Callbacks={}> {
     type: TypeSchemaDataType;
     isRequired?: boolean;
     defaultValue?: any;
     format?: keyof Callbacks;
 }
-interface ISchemaProperties<T={}, Callbacks={}> {
-    properties: {
-        [ P in keyof T]?: ISchemaProperty<T[P], Callbacks> & {
-            properties?: ISchemaProperties<T[P], Callbacks>
-        }
-    };
+type ISchemaProperties<T={}, Callbacks={}> = {
+    [ P in keyof T]?: ISchemaProperty<Callbacks> & {
+        properties?: ISchemaProperties<T[P], Callbacks>
+    }
 }
 
-interface ISchemaConfig<T={}, DataType={}, Callbacks={}> {
+export interface ISchemaConfig<T={}, DataType={}, Callbacks={}> {
     properties: ISchemaProperties<T, Callbacks>;
     dataType?: ISchemaProperties<DataType, Callbacks>;
     callbacks?: Callbacks;
@@ -69,7 +67,7 @@ export class Schema extends ASchema{
                 ...(schema.dataType || {})
             }
             Object.keys(schema.properties).forEach((attrKey: string) => {
-                const attr: ISchemaProperty<any, Callbacks> = schema.properties[attrKey];
+                const attr: ISchemaProperty<Callbacks> = schema.properties[attrKey];
                 const attrType: TypeSchemaDataType = attr.type as any;
                 const attrArrayTypeMatch = utils.isString(attrType) ? /^Array\<#([a-zA-Z0-9_-]{1,})\>$/.exec(attrType as any) : null;
                 const attrTypeMatch = utils.isString(attrType) ? /#([a-zA-Z0-9_-]{1,})$/i.exec(attrType as any) : null;
@@ -94,7 +92,7 @@ export class Schema extends ASchema{
                     finalData[attrKey] = attrValue;
                 } else if(attrArrayTypeMatch) {
                     const useType = attrArrayTypeMatch[1];
-                    const useSchema: ISchemaProperty<any, Callbacks> = useSchemaData[useType];
+                    const useSchema: ISchemaProperty<Callbacks> = useSchemaData[useType];
                     const useAttrType: TypeSchemaDataType = useSchema.type as any;
                     const forEachData = attrValue || [];
                     const forResultData = utils.isArray(forEachData) ? [] : {};
@@ -116,9 +114,8 @@ export class Schema extends ASchema{
                     }
                     finalData[attrKey] = forResultData;
                 } else if(attrTypeMatch) {
-                    const useType = attrArrayTypeMatch[1];
-                    const useSchema: ISchemaProperty<any, Callbacks> = useSchemaData[useType];
-                    console.log(useSchema);
+                    const useType = attrTypeMatch[1];
+                    const useSchema: ISchemaProperty<Callbacks> = useSchemaData[useType];
                     const useData: any = this.format({
                         formatResult: attrValue
                     }, {

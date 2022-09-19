@@ -11,8 +11,6 @@ type TypeRequestBody = {
 export class Api {
     @Autowired()
     private email: Email;
-    @GetConfig("Email")
-    private config: any;
 
     @RequestMapping("/guid", "GET")
     guid() {

@@ -12,7 +12,7 @@ import { Logger, GetLogger } from "../logs";
 import { StateStore } from "./StateManage";
 import { configState } from "../data/config";
 import { RouterController } from "../Controller/RouterController";
-
+import { Middleware } from "./Middleware";
 
 interface IApplication {
     main(app: Express): void;
@@ -28,24 +28,26 @@ class Application implements IApplication {
     public logger: Logger;
 
     constructor(
-        private controller: RouterController
+        private controller: RouterController,
+        private middleware: Middleware
     ) {
         // this.logger.info(`Application init`);
     }
     public main(app: Express): any {
         return new Promise((resolve) => {
-            app.use(expressSession({
-                genid: () => {
-                    const uid = utils.guid();
-                    console.log("general session id",uid);
-                    return uid;
-                },
-                secret: this.serverConfig.publicKey || "Elmer-Server",
-                cookie: {
-                    maxAge: 60000
-                }
-            }));
+            // app.use(expressSession({
+            //     genid: () => {
+            //         const uid = utils.guid();
+            //         console.log("general session id",uid);
+            //         return uid;
+            //     },
+            //     secret: this.serverConfig.publicKey || "Elmer-Server",
+            //     cookie: {
+            //         maxAge: 60000
+            //     }
+            // }));
             app.use(json());
+            this.middleware.use(app);
             this.controller.routeListen(app);
             resolve({});
         });
