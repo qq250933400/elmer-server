@@ -15,6 +15,7 @@ import { TypeConfigOptionKey, IConfigOption } from "./IConfiguration";
 import { getObjFromInstance, delegateInit } from "../core/Module";
 import { StateManage } from "../core/StateManage";
 import { configState, TypeConfigStateData } from "../data/config";
+import { callbacks } from "./config.callbacks";
 import { Schema } from "../core/Schema";
 
 type TypeConfiguration = IConfigApplication & IConfigOption;
@@ -70,14 +71,14 @@ export const Config = (fileName: string, name?: TypeConfigOptionKey, schema?: an
                 }
                 if(name === "Security") {
                     schemaObj.validate(configData, saveName);
-                    stateActions.Security.set(schemaObj.format(configData, schemaObj.getSchemas().Security) as any);
+                    stateActions.Security.set(schemaObj.format(configData, schemaObj.getSchemas().Security, callbacks) as any,);
                 } else if(utils.isEmpty(name)) {
                     schemaObj.validate(configData, saveName);
-                    stateActions.Server.set(schemaObj.format(configData?.Server, schemaObj.getSchemas().Server) as any);
-                    stateActions.DataBase.set(schemaObj.format(configData?.DataBase, schemaObj.getSchemas().DataBase) as any);
-                    stateActions.Log.set(schemaObj.format(configData?.Log || {}, schemaObj.getSchemas().Log) as any);
-                    stateActions.Email.set(schemaObj.format(configData?.Email || {}, schemaObj.getSchemas().Email) as any);
-                    stateActions.Session.set(schemaObj.format(configData?.Session || {}, schemaObj.getSchemas().Session) as any);
+                    stateActions.Server.set(schemaObj.format(configData?.Server, schemaObj.getSchemas().Server, callbacks) as any);
+                    stateActions.DataBase.set(schemaObj.format(configData?.DataBase, schemaObj.getSchemas().DataBase, callbacks) as any);
+                    stateActions.Log.set(schemaObj.format(configData?.Log || {}, schemaObj.getSchemas().Log, callbacks) as any);
+                    stateActions.Email.set(schemaObj.format(configData?.Email || {}, schemaObj.getSchemas().Email, callbacks) as any);
+                    stateActions.Session.set(schemaObj.format(configData?.Session || {}, schemaObj.getSchemas().Session, callbacks) as any);
                 } else {
                     const otherConfig = stateActions.others.get() || {};
                     otherConfig[name] = configData;
@@ -96,8 +97,12 @@ export const GetConfig = <ConfigKey extends keyof TypeConfiguration>(configKey: 
             get: () => {
                 const stateObj: StateManage = getObjFromInstance(StateManage as any, target);
                 const stateActions = stateObj.invoke<TypeConfigStateData>(configState.stateName);
-                const configValue = stateActions[configKey].get();
-                return utils.isEmpty(valueKey) ? configValue : utils.getValue(configValue, valueKey as string);
+                if(stateActions[configKey]) {
+                    const configValue = stateActions[configKey].get();
+                    return utils.isEmpty(valueKey) ? configValue : utils.getValue(configValue, valueKey as string);
+                } else {
+                    return null;
+                }
             }
         });
     }

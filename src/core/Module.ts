@@ -187,3 +187,14 @@ export const getObjFromInstance = (Target: new(...args: any[]) => any, instance:
     return targetObj;
 };
 
+export const GetInstanceId = (target: any, attrKey: string) => {
+    Object.defineProperty(target, attrKey, {
+        configurable: false,
+        enumerable: true,
+        get: () => {
+            const instanceId = Reflect.getMetadata(CONST_DECORATOR_FOR_MODULE_INSTANCEID, target) ||
+                Reflect.getMetadata(CONST_DECORATOR_FOR_MODULE_INSTANCEID, target.constructor);
+            return instanceId;
+        }
+    });
+};

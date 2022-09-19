@@ -3,4 +3,5 @@ export interface IConfigSession {
     timeout: number;
     encode?: boolean;
     publicKey?: string;
+    enabled?: boolean;
 }

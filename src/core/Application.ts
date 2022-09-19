@@ -1,9 +1,8 @@
 import com from "../utils/utils";
 import * as express from "express";
 import * as expressSession from "express-session";
-import * as cookieParser from "cookie-parser";
 import { json } from 'body-parser';
-import { Express, Request, Response } from "express";
+import { Express } from "express";
 import { utils, queueCallFunc } from "elmer-common";
 import { CONST_DECORATOR_FOR_MODULE_INSTANCEID } from "../data";
 import { createInstance, AppService } from "./Module";
@@ -13,6 +12,7 @@ import { StateStore } from "./StateManage";
 import { configState } from "../data/config";
 import { RouterController } from "../Controller/RouterController";
 import { Middleware } from "./Middleware";
+import { Session } from "../session";
 
 interface IApplication {
     main(app: Express): void;
@@ -29,28 +29,24 @@ class Application implements IApplication {
 
     constructor(
         private controller: RouterController,
-        private middleware: Middleware
-    ) {
-        // this.logger.info(`Application init`);
-    }
+        private middleware: Middleware,
+        private session: Session
+    ) {}
     public main(app: Express): any {
-        return new Promise((resolve) => {
-            // app.use(expressSession({
-            //     genid: () => {
-            //         const uid = utils.guid();
-            //         console.log("general session id",uid);
-            //         return uid;
-            //     },
-            //     secret: this.serverConfig.publicKey || "Elmer-Server",
-            //     cookie: {
-            //         maxAge: 60000
-            //     }
-            // }));
-            app.use(json());
-            this.middleware.use(app);
-            this.controller.routeListen(app);
-            resolve({});
-        });
+        if(!utils.isEmpty(this.serverConfig.staticPath)) {
+            this.logger.info(`Resource Path: ${this.serverConfig.staticPath}`);
+            if(utils.isEmpty(this.serverConfig.staticRoute)) {
+                app.use(express.static(this.serverConfig.staticPath));
+            } else {
+                app.use(this.serverConfig.staticRoute, express.static(this.serverConfig.staticPath));
+            }
+        }
+        app.use(json());
+        this.session.init(app);
+        this.middleware.use(app);
+        this.controller.routeListen(app);
+
+        return Promise.resolve();
     }
     public listen(app: Express): void {
         app.listen(

@@ -58,14 +58,18 @@ export class Schema extends ASchema{
     getSchemas() {
         return this.schemaConfig;
     }
-    format<T={}, DataType={}, Callbacks={}>(data: any, schema: ISchemaConfig<T, DataType, Callbacks>): void {
+    format<T={}, DataType={}, Callbacks={}>(data: any, schema: ISchemaConfig<T, DataType, Callbacks>, callbacks?: any): void {
         const finalData: any = {};
         if(schema && utils.isObject(data) && utils.isObject(schema.properties)) {
-            const formatCallbacks: any = schema.callbacks || {};
+            const formatCallbacks: any = {
+                ...(schema.callbacks || {}),
+                ...(callbacks || {})
+            };
             const useSchemaData: any = {
                 ...this.schemaConfig,
                 ...(schema.dataType || {})
             }
+            // console.log(schema);
             Object.keys(schema.properties).forEach((attrKey: string) => {
                 const attr: ISchemaProperty<Callbacks> = schema.properties[attrKey];
                 const attrType: TypeSchemaDataType = attr.type as any;

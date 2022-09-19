@@ -1,5 +1,5 @@
 import { Autowired } from "elmer-common";
-import { Controller, RequestMapping, GetRequestBody, utils, Email, GetConfig } from "../../src";
+import { Controller, RequestMapping, GetRequestBody, utils, Email, GetConfig, IConfigServer } from "../../src";
 import { TestModel } from "../model/TestModel";
 
 type TypeRequestBody = {
@@ -11,6 +11,8 @@ type TypeRequestBody = {
 export class Api {
     @Autowired()
     private email: Email;
+    @GetConfig("Server")
+    private config: IConfigServer;
 
     @RequestMapping("/guid", "GET")
     guid() {
@@ -20,7 +22,7 @@ export class Api {
     }
     @RequestMapping("/encode", "POST")
     encode(@GetRequestBody() body: TypeRequestBody) {
-        return utils.aseEncode(body.text);
+        return utils.aseEncode(body.text, this.config.publicKey);
     }
 
     @RequestMapping("/email", "POST")

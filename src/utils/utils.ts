@@ -50,17 +50,15 @@ const aseIV = "Tka40pVIWalZAzyL";
 const algorithm = "aes-128-cbc";
 const defaultPublicKey = "DOYPdezphI3p0135";
 
-const aseEncode = (val: string): string => {
-    const serverConfig = getApplicationConfig()?.Server;
-    const encodeKey = serverConfig?.publicKey || defaultPublicKey;
+const aseEncode = (val: string, publicKey: string): string => {
+    const encodeKey = publicKey;
     const encodeKeyBuffer = Buffer.from(encodeKey, "utf-8");
     const IVBuffer = Buffer.from(aseIV, "utf-8");
     const cipher = crypto.createCipheriv(algorithm, encodeKeyBuffer, IVBuffer);
     return cipher.update(val, "utf-8", "hex") + cipher.final("hex");
 };
-const aseDecode = (crypted: string):string => {
-    const serverConfig = getApplicationConfig()?.Server;
-    const encodeKey = serverConfig?.publicKey || defaultPublicKey;
+const aseDecode = (crypted: string, publicKey: string):string => {
+    const encodeKey = publicKey;
     const encodeKeyBuffer = Buffer.from(encodeKey, "utf-8");
     const IVBuffer = Buffer.from(aseIV, "utf-8");
     const decCipher = crypto.createDecipheriv(algorithm, encodeKeyBuffer, IVBuffer);

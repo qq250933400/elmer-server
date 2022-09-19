@@ -20,6 +20,10 @@ export default ({
         timeout: {
             type: "Number",
             defaultValue: 7200
+        },
+        enabled: {
+            type: "Boolean",
+            defaultValue: false
         }
     }
 }) as ISchemaConfig<IConfigSession, {}, IFormatCallbacks>;

@@ -17,12 +17,15 @@ export default {
             defaultValue: "./assets",
             format: "formatPath"
         },
+        staticRoute: {
+            type: "String"
+        },
         uploadPath: {
             type: "String",
             defaultValue: "./assets/upload",
             format: "formatPath"
         },
-        temp: {
+        tempPath: {
             type: "String",
             defaultValue: "./temp",
             format: "formatPath"

@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { GetConfig, IConfigServer } from "../config";
-import { Service } from "../core/Module";
+import { AppService } from "../core/Module";
 import { Request } from "express";
 import { UploadStream } from "../core/UploadStream";
 import { GetLogger } from "../logs";
@@ -32,7 +32,7 @@ export type TypeUploadCallback = (action: TypeUploadAction, info: TypeUploadInfo
     saveFileName?: string
 }) => TypeUploadInfo;
 
-@Service
+@AppService
 export class StaticFiles {
 
     @GetConfig("Server", "staticPath")
@@ -60,6 +60,9 @@ export class StaticFiles {
         } else {
             throw new Error("File not found");
         }
+    }
+    writeFile(fileName: string, data: any, opt?: fs.WriteFileOptions): void {
+        fs.writeFileSync(fileName, data, opt);
     }
     /**
      * 检查目录，不存在自动创建
@@ -119,7 +122,7 @@ export class StaticFiles {
                 const tempId = !utils.isEmpty(info.fileHash) ? md5(info.fileHash) : "file_" + utils.guid();
                 const infoName = tempId + ".info";
                
-                const saveInfoFile = path.resolve(this.serverConfig.temp, infoName);
+                const saveInfoFile = path.resolve(this.serverConfig.tempPath, infoName);
                 const preCheckResult = typeof fn === "function" && fn(info.fileAction, {
                     ...info,
                 });
@@ -129,7 +132,7 @@ export class StaticFiles {
                     updateData: [],
                     fileBlockSize: blockSize
                 };
-                if(!fs.existsSync(this.serverConfig.temp)) {
+                if(!fs.existsSync(this.serverConfig.tempPath)) {
                     // this.logger.error("上传文件失败，临时存储路径不存在，请检查设置。");
                     reject({
                         statusCode: "UF_500",
@@ -157,7 +160,7 @@ export class StaticFiles {
             } else if(info.fileAction === "Data") {
                 const { fileBlockIndex } = info;
                 const tempFileName = `./${fileId}_${fileBlockIndex}.temp`;
-                const tmpSaveFileName = path.resolve(this.serverConfig.temp, tempFileName);
+                const tmpSaveFileName = path.resolve(this.serverConfig.tempPath, tempFileName);
                 const fStream = fs.createWriteStream(tmpSaveFileName);
                 req.pipe(fStream, {
                     end: true
@@ -176,7 +179,7 @@ export class StaticFiles {
                 });
             } else if(info.fileAction === "Complete") {
                 const tempId = fileId || md5(info.fileHash);
-                const infoName = path.resolve(this.serverConfig.temp, `./${tempId}.info`);
+                const infoName = path.resolve(this.serverConfig.tempPath, `./${tempId}.info`);
                 const tempInfo = this.readUploadTempInfo(infoName);
                 const fileSize = info.fileSize;
                 const blockSize = tempInfo.fileBlockSize;
@@ -191,7 +194,7 @@ export class StaticFiles {
                     this.checkDir(savePath, this.serverConfig.uploadPath);
                     for(let i=0;i<blockCount;i++) {
                         const tmpFile = `${tempId}_${i}.temp`;
-                        const tmpFileName = path.resolve(this.serverConfig.temp, tmpFile);
+                        const tmpFileName = path.resolve(this.serverConfig.tempPath, tmpFile);
                         const blockData = fs.readFileSync(tmpFileName, {
                             encoding: "binary"
                         });
