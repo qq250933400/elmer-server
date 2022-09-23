@@ -76,3 +76,17 @@ export const GetResponse = (target: Object, methodName: string, paramIndex: numb
         };
     });
 };
+
+export const GetSessionId = (target: Object, methodName: string, paramIndex: number) => {
+    // NODE_SESSION_ID
+    createParamDecorator({
+        target,
+        func: methodName,
+        paramIndex
+    }, () => {
+        return (req: Request) => {
+            const NODE_SESSION_ID = (req.cookies || {}).NODE_SESSION_ID;
+            return NODE_SESSION_ID;
+        };
+    });
+}

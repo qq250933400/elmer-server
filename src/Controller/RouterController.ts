@@ -4,12 +4,14 @@ import { Express, Request, Response } from "express";
 import { getControllers, TypeDefineRoute, TypeRequestMethod } from "./decorators";
 import {
     CONST_DECORATOR_CONTROLLER_ROUTER,
-    CONST_DECORATOR_CONTROLLER_NAMESPACE
+    CONST_DECORATOR_CONTROLLER_NAMESPACE,
+    CONST_DECORATOR_CONTROLLER_REQUESTID
 } from "../data";
 import { getParamsFromMethodDecorator } from "../core/Decorators";
 import { getObjFromInstance } from "../core/Module";
 import { utils } from "elmer-common";
 import { GetLogger, Logger } from "../logs";
+import { SessionService } from "../session";
 import com from "../utils/utils";
 
 type TypeFactory = new(...args:any) => any;
@@ -21,7 +23,11 @@ export class RouterController {
     private logger: Logger;
 
     private objPool: any = {};
+    constructor(
+        private session: SessionService
+    ) {
 
+    }
     routeListen(app: Express): void {
         const controllers: TypeFactory[] = getControllers();
         this.logger.info('Initialize route: ');
@@ -75,6 +81,7 @@ export class RouterController {
                 const method = req.method;
                 const ctrlParams = getParamsFromMethodDecorator(controller, route.callbackName, req, res, next);
                 this.logger.info(`[${method}] ${url}`);
+                this.session.registe(req, controller.uid);
                 com.invoke(() => {
                     return controller[route.callbackName].apply(controller, ctrlParams);
                 }).then((resData) => {
@@ -99,6 +106,7 @@ export class RouterController {
             typeof obj.destory === "function" && obj.destory();
             delete reqObjs[objId];
         });
+        this.session.unRegiste(uid);
         delete this.objPool[uid];
     }
     private exceptionHandle(req: Request, res: Response, next: Function, err: Error): void {
@@ -119,6 +127,7 @@ export class RouterController {
                 this.objPool[reqId] = reqPool;
             }
             if(!obj) {
+                Reflect.defineMetadata(CONST_DECORATOR_CONTROLLER_REQUESTID, reqId, Factory);
                 obj = new Factory(...opt.args);
                 reqPool[opt.uid] = obj;
             }

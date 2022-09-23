@@ -19,7 +19,7 @@ export default ({
         },
         timeout: {
             type: "Number",
-            defaultValue: 7200
+            defaultValue: 7200000
         },
         enabled: {
             type: "Boolean",

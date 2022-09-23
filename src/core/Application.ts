@@ -12,7 +12,7 @@ import { StateStore } from "./StateManage";
 import { configState } from "../data/config";
 import { RouterController } from "../Controller/RouterController";
 import { Middleware } from "./Middleware";
-import { Session } from "../session";
+import { SessionService } from "../session";
 
 interface IApplication {
     main(app: Express): void;
@@ -30,7 +30,7 @@ class Application implements IApplication {
     constructor(
         private controller: RouterController,
         private middleware: Middleware,
-        private session: Session
+        private session: SessionService
     ) {}
     public main(app: Express): any {
         if(!utils.isEmpty(this.serverConfig.staticPath)) {

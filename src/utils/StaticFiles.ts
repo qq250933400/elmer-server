@@ -64,6 +64,9 @@ export class StaticFiles {
     writeFile(fileName: string, data: any, opt?: fs.WriteFileOptions): void {
         fs.writeFileSync(fileName, data, opt);
     }
+    readDirSync(path: string): string[] {
+        return fs.readdirSync(path, "utf-8");
+    }
     /**
      * 检查目录，不存在自动创建
      * @param path 检查地址
@@ -84,6 +87,17 @@ export class StaticFiles {
                 checkTempPath = checkTempPath.replace(/\/\//g, "/");
                 if(!fs.existsSync(checkTempPath)) {
                     fs.mkdirSync(checkTempPath);
+                    fs.chmodSync(checkTempPath,
+                        fs.constants.S_IRUSR |
+                        fs.constants.S_IWUSR |
+                        fs.constants.S_IROTH |
+                        fs.constants.S_IWOTH |
+                        fs.constants.S_IRGRP |
+                        fs.constants.S_IWGRP |
+                        fs.constants.S_IRWXU |
+                        fs.constants.W_OK |
+                        fs.constants.R_OK
+                    );
                 }
                 checkPathValue = checkTempPath;
             }
