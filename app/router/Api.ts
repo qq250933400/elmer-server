@@ -1,5 +1,5 @@
 import { Autowired } from "elmer-common";
-import { Controller, RequestMapping, GetRequestBody, utils, Email, GetConfig, IConfigServer } from "../../src";
+import { Controller, RequestMapping, GetRequestBody, utils, Email, GetConfig, IConfigServer, StaticFiles } from "../../src";
 import { TestModel } from "../model/TestModel";
 
 type TypeRequestBody = {
@@ -13,6 +13,10 @@ export class Api {
     private email: Email;
     @GetConfig("Server")
     private config: IConfigServer;
+
+    constructor(
+        private fileObj: StaticFiles
+    ) {}
 
     @RequestMapping("/guid", "GET")
     guid() {
@@ -41,5 +45,9 @@ export class Api {
     @RequestMapping("/db/text", "GET")
     otherExec() {
         console.log("otherExec");
+    }
+    @RequestMapping("/test/json", "GET")
+    testJSON() {
+        return this.fileObj.readJson("./test.json");
     }
 }

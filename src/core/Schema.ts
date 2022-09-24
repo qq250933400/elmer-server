@@ -1,4 +1,4 @@
-import { Service } from "../core/Module";
+import { Service } from "./Module";
 import utils from "../utils/utils";
 
 type TypeSchemaPropertyType = "String" | "Array" | "Object" | "Boolean" | "Number";

@@ -3,3 +3,6 @@
 /src/
 /app/
 /stub/
+/temp/
+/app/
+/.vscode/

@@ -2,8 +2,6 @@ import "reflect-metadata";
 import { GetConfig, IConfigServer } from "../config";
 import { AppService } from "../core/Module";
 import { Request } from "express";
-import { UploadStream } from "../core/UploadStream";
-import { GetLogger } from "../logs";
 import utils from "./utils";
 import * as path from "path";
 import * as fs from "fs";
@@ -40,20 +38,10 @@ export class StaticFiles {
 
     @GetConfig("Server")
     private serverConfig: IConfigServer;
-
-    // @GetLogger
-    // private logger: Logger;
-
-    private rootPath: string;
-    constructor() {
-        if(!utils.isEmpty(this.path)) {
-            this.rootPath = path.resolve(process.cwd(), this.path);
-        } else {
-            this.rootPath = path.resolve(process.cwd(), "./static");
-        }
-    }
+   
     readJson(fileName: string, absolute?: boolean) {
-        const localPath = !absolute ? path.resolve(this.rootPath, fileName) : fileName;
+        const savePath = this.getStaticPath();
+        const localPath = !absolute ? path.resolve(savePath, fileName) : fileName;
         if(fs.existsSync(localPath)) {
             const txt = fs.readFileSync(localPath, "utf8");
             return JSON.parse(txt);
@@ -262,5 +250,12 @@ export class StaticFiles {
     private readUploadTempInfo(fileName: string): TypeUploadInfo {
         const txtInfo = fs.readFileSync(fileName, { encoding: "utf-8" });
         return JSON.parse(txtInfo);
+    }
+    private getStaticPath(): string {
+        if(!utils.isEmpty(this.path)) {
+            return path.resolve(process.cwd(), this.path);
+        } else {
+            return path.resolve(process.cwd(), "./static");
+        }
     }
 }
