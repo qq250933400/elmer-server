@@ -29,7 +29,7 @@ const readConfigData = (fileName: string):any => {
     }
 };
 
-const loadConfigSchema = (Target: new(...args: any[]) => any) => {
+export const loadConfigSchema = (Target: new(...args: any[]) => any) => {
     const schemaObj: Schema = getObjFromInstance(Schema as any, Target);
     schemaObj.addSchema("Application", ApplicationConfigSchema);
     schemaObj.addSchema("DataBase", DBConfigSchema);

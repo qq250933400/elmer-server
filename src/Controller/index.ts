@@ -1,2 +1,2 @@
-export * from "./RouterController";
+export * from "./Request";
 export { Controller, RequestMapping } from "./decorators";

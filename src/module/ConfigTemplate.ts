@@ -1,20 +1,33 @@
-import { initConfigSchema } from "../config";
 import { Schema } from "../core/Schema";
-import { Autowired, utils } from "elmer-common";
+import { utils } from "elmer-common";
 import * as fs from "fs";
 import * as path from "path";
 import * as YAML from "yaml";
+import ApplicationConfigSchema from "../config/config.schema.application";
+import DBConfigSchema from "../config/config.schema.db";
+import ServerConfigSchema from "../config/config.schema.server";
+import LogConfigSchema from "../config/config.schema.log";
+import CrossSiteConfigSchema from "../config/config.schema.crossSite";
+import EmailConfigSchema from "../config/config.schema.email";
+import SessionConfigSchema from "../config/config.schema.session";
 
 export class ConfigTemplate {
-    @Autowired()
-    private schemaObj: Schema;
-
     private tempSchema: any = {};
-    constructor() {
-        initConfigSchema();
+    constructor(
+        private schemaObj: Schema
+    ) {
+
     }
     init() {
-        const configSchema = initConfigSchema();
+        const configSchema = {
+            Application: ApplicationConfigSchema,
+            DataBase: DBConfigSchema,
+            Server: ServerConfigSchema,
+            Log: LogConfigSchema,
+            Security: CrossSiteConfigSchema,
+            Email: EmailConfigSchema,
+            Session: SessionConfigSchema
+        }
         this.tempSchema = configSchema || {};
         // Application config
         const serverFile = path.resolve(process.cwd(), "./config.yml");
@@ -28,11 +41,11 @@ export class ConfigTemplate {
         // crossSite config
         const crossSiteFile = path.resolve(process.cwd(), "./crossSite.json");
         if(!fs.existsSync(crossSiteFile)) {
-            const crossSiteConfig = this.schemaToData(["CrossSite"], configSchema);
+            const crossSiteConfig = this.schemaToData(["Security"], configSchema);
             fs.writeFileSync(crossSiteFile, JSON.stringify(crossSiteConfig.CrossSite, null, 4), { encoding: "utf8" });
         }
     }
-    private schemaToData(names: string[], schemaData: any) {
+    private schemaToData<T, Name extends keyof T>(names: Name[], schemaData: T) {
         const data:any = {};
         names.forEach((name) => {
             data[name] = this.schemaConvert(schemaData[name]);
