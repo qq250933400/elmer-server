@@ -85,14 +85,15 @@ export class RouterController {
                 com.invoke(() => {
                     return controller[route.callbackName].apply(controller, ctrlParams);
                 }).then((resData) => {
-                    res.status(200);
                     res.send(resData);
                     this.releaseController(controller);
                 }).catch((err) => {
+                    res.status(500);
                     this.exceptionHandle(req, res, next, err);
                     this.releaseController(controller);
                 });
             } catch(e) {
+                res.status(500);
                 this.exceptionHandle(req, res, next, e);
                 this.releaseController(controller);
             }

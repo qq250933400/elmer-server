@@ -53,6 +53,19 @@ export const RequestCookie = (target: Object, methodName: string, paramIndex: nu
     });
 };
 
+export const GetCookie = (name: string) => (target: Object, methodName: string, paramIndex: number) => {
+    createParamDecorator({
+        target,
+        func: methodName,
+        paramIndex
+    }, () => {
+        return (req: Request) => {
+            const cookieData =  req.cookies || {};
+            return !utils.isEmpty(name) ? cookieData[name] : cookieData;
+        };
+    });
+};
+
 export const GetRequest = (target: Object, methodName: string, paramIndex: number) => {
     createParamDecorator({
         target,

@@ -36,6 +36,7 @@ export class CrossOrigin implements IMiddleware {
                 this.logger.debug("  Origin: ", origin);
                 this.logger.debug("  host: ", host);
                 this.logger.debug("  url : ", `${host}${req.originalUrl}`);
+                this.logger.debug("  method: ", req.method);
                 for(const rule of domainRules) {
                     let matchPath = false;
                     if(origin === rule.domain) {
@@ -90,7 +91,7 @@ export class CrossOrigin implements IMiddleware {
                 }
                 this.logger.debug("Cross origin configuration checking complete");
             }
-            next();
+            req.method !== "OPTIONS" && next();
         });
     }
 }
