@@ -135,6 +135,9 @@ export class SessionService {
                 dateTime: Date.now(),
                 data: {}
             });
+            const origin = (req.headers["origin"] || "")
+                .replace(/^http[s]{0,1}\:\/\//i, "").replace(/\:[\d]*$/, "");
+            const host = req.get("host").replace(/\:[\d]*$/, "");
             if(this.config.encode) {
                 this.fileObj.writeFile(sessionFile, com.aseEncode(sessionData, this.publicKey));
             } else {
@@ -143,7 +146,9 @@ export class SessionService {
             res.cookie("NODE_SESSION_ID", NODE_SESSION_ID, {
                 "secure": true,
                 "httpOnly": true,
-                "maxAge": this.config.timeout || 7200000
+                "maxAge": this.config.timeout || 7200000,
+                "domain": origin.length > 0 && origin !== host ? [origin, host].join(",") : host,
+                "sameSite": "none"
             });
             req.cookies.NODE_SESSION_ID = NODE_SESSION_ID;
             this.logger.info("Init session", this.config.timeout);

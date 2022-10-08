@@ -25,6 +25,9 @@ export default {
                 },
                 headers: {
                     type: "Object"
+                },
+                withCredentials: {
+                    type: "Boolean"
                 }
             }
         },
@@ -44,6 +47,9 @@ export default {
                 },
                 headers: {
                     type: "Object"
+                },
+                withCredentials: {
+                    type: "Boolean"
                 }
             }
         }

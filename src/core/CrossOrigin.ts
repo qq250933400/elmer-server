@@ -21,7 +21,7 @@ export class CrossOrigin implements IMiddleware {
             const method = req.method;
             const isOptions = method.toUpperCase() === "OPTIONS";
             const origin = req.headers["origin"];
-            const host =  req.protocol + "://" + req.hostname;
+            const host =  req.protocol + "://" + req.get("host");
             if(
                 ((
                     this.config.enabled === undefined ||
@@ -32,27 +32,30 @@ export class CrossOrigin implements IMiddleware {
             ) {
                 const domainRules = this.config.rules || [];
                
-                this.logger.debug("Cross origin configuration checking: ");
-                this.logger.debug("  Origin: ", origin);
-                this.logger.debug("  host: ", host);
-                this.logger.debug("  url : ", `${host}${req.originalUrl}`);
-                this.logger.debug("  method: ", req.method);
+                this.logger.debug("Cross origin configuration checking... ");
+                this.logger.debug("  Origin : ", origin);
+                this.logger.debug("  host   : ", host);
+                this.logger.debug("  url    : ", `${host}${req.originalUrl}`);
+                this.logger.debug("  method : ", req.method);   
                 for(const rule of domainRules) {
                     let matchPath = false;
                     if(origin === rule.domain) {
                         let allHeaders = rule.allowHeaders || [];
+                        res.header("Access-Control-Allow-Origin", origin);
                         if(rule.withCredentials) {
                             res.header("Access-Control-Allow-Credentials", true as any);
+                            this.logger.debug("  Access-Control-Allow-Credentials", true);
                         }
-                        res.header("Access-Control-Allow-Origin", origin);
                         if(rule.rules?.length > 0) {
                             const reqPathName = req.originalUrl;
+                            let matchAllowHeaders = false
                             for(const apiRule of rule.rules) {
                                 if(apiRule.path === reqPathName) {
                                     matchPath = true;
                                     if(apiRule.headers) {
                                         Object.keys(apiRule.headers).map((headerKey) => {
-                                            res.header(headerKey, apiRule.headers[headerKey])
+                                            res.header(headerKey, apiRule.headers[headerKey]);
+                                            this.logger.debug("  Header:", `${headerKey}=${apiRule.headers[headerKey]}`);
                                         });
                                     }
                                     if(apiRule.withCredentials) {
@@ -61,17 +64,30 @@ export class CrossOrigin implements IMiddleware {
                                     }
                                     if(apiRule.allowHeaders?.length > 0) {
                                         allHeaders = allHeaders.length !== 1 && allHeaders[0] !== "*" ? [...allHeaders, ...apiRule.allowHeaders] : apiRule.allowHeaders;
-                                        res.header("Access-Control-Allow-Methods", apiRule.method.join(","));
-                                        this.logger.debug("  Access-Control-Allow-Methods", apiRule.method.join(","));
+                                        matchAllowHeaders = true;
+                                        res.header("Access-Control-Allow-Headers", apiRule.method.join(","));
+                                        this.logger.debug("  Access-Control-Allow-Headers", apiRule.method.join(","));
+                                    }
+                                    if(apiRule.method?.length > 0) {
+                                        res.header("Access-Control-Allow-Method", apiRule.method.join(","));
+                                        this.logger.debug("  Access-Control-Allow-Method", apiRule.method.join(","));
                                     }
                                     break;
                                 }
                             }
+                            if(!matchAllowHeaders) {
+                                if(rule.allowHeaders.length === 1 && rule.allowHeaders[0] === "*") {
+                                    res.header("Access-Control-Allow-Headers", "*");
+                                    this.logger.debug("  Access-Control-Allow-Headers", "*", "Not Match Allow Headers");
+                                }
+                            }
                         } else {
                             res.header("Access-Control-Allow-Methods", "*");
+                            this.logger.debug("  Access-Control-Allow-Methods: *");
                         }
                         if(allHeaders.length === 1 && allHeaders[0] === "*") {
                             !matchPath && res.header("Access-Control-Allow-Headers", "*");
+                            !matchPath && this.logger.debug("  Access-Control-Allow-Headers", "*", "Not Match Api");
                         } else {
                             res.header("Access-Control-Allow-Headers", allHeaders?.length > 0 ? allHeaders.join(",") : "");
                             this.logger.debug("  Access-Control-Allow-Methods", allHeaders.join(","));
