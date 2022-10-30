@@ -12,6 +12,7 @@ import { getObjFromInstance } from "../core/Module";
 import { utils } from "elmer-common";
 import { GetLogger, Logger } from "../logs";
 import { SessionService } from "../session";
+import { callHook } from "../core/Decorators";
 import com from "../utils/utils";
 
 type TypeFactory = new(...args:any) => any;
@@ -28,12 +29,14 @@ export class RouterController {
     ) {
 
     }
-    routeListen(app: Express): void {
+    routeListen(app: Express, configApplication: any): void {
         const controllers: TypeFactory[] = getControllers();
         this.logger.info('Initialize route: ');
+        callHook(configApplication, "onBeforeRouteInit", app);
         controllers.forEach((Controller:TypeFactory) => {
             this.ctrlListen(Controller, app);
         });
+        callHook(configApplication, "onAfterRouteInit", app);
     }
     private ctrlListen(Controller: TypeFactory, app: Express): void {
         const namespace = Reflect.getMetadata(CONST_DECORATOR_CONTROLLER_NAMESPACE, Controller);
@@ -42,7 +45,7 @@ export class RouterController {
             routers.forEach((route: TypeDefineRoute) => {
                 ((name: string, routeData: TypeDefineRoute, ControllerFactory: TypeFactory) => {
                     const pathName = ((name || "") + "/" + routeData.url).replace(/[\/]{2,}/, "/");
-                    const url = pathName.startsWith("/") ? pathName : "/" + pathName;
+                    const url = utils.isRegExp(routeData.url) ? routeData.url : pathName.startsWith("/") ? pathName : "/" + pathName;
                     const method: TypeRequestMethod = routeData.method || "GET";
                     const listenCallback = this.createRouteHandler(ControllerFactory, routeData);
                     switch(method) {
@@ -68,7 +71,11 @@ export class RouterController {
                         }
                     }
                     const spec = " ".repeat(9 - method.length);
-                    this.logger.info(`  [${method}]${spec}${url}`);
+                    if(utils.isRegExp(url)) {
+                        this.logger.info(`  [${method}]${spec}${url} [RegExp]`);
+                    } else {
+                        this.logger.info(`  [${method}]${spec}${url}`);
+                    }
                 })(namespace, route, Controller);
             });
         }
@@ -124,6 +131,7 @@ export class RouterController {
         const reqObj = getObjFromInstance(Controller, this, (Factory: new(...args:any[]) => any, opt) => {
             const reqPool = this.objPool[reqId] || {};
             let obj = reqPool[opt.uid];
+            opt.shouldInit = true;
             if(!this.objPool[reqId]) {
                 this.objPool[reqId] = reqPool;
             }

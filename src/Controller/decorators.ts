@@ -37,7 +37,7 @@ export const Controller = (namespace?: string) => {
     };
 };
 
-export const RequestMapping = (pathName: string, method?: TypeRequestMethod) => {
+export const RequestMapping = (pathName: string|RegExp, method?: TypeRequestMethod) => {
     return (target: any, attrName: string, descriptor: PropertyDescriptor) => {
         const Factory = target.constructor;
         const routers: TypeDefineRoute[] = Reflect.getMetadata(CONST_DECORATOR_CONTROLLER_ROUTER, Factory) || [];

@@ -1,10 +1,11 @@
 import { RequestMapping, Controller } from "./decorators";
 import { GetSessionId } from "./Request";
-import utils from "../utils/utils";
 import { StaticFiles } from "../utils/StaticFiles";
 import { QueryParam } from "./Request";
 import { Session } from "../session";
+import { $beforeRouteInit } from "../core/BootApplication";
 import * as path from "path";
+import utils from "../utils/utils";
 
 @Controller("test")
 export class TestController {
@@ -17,6 +18,7 @@ export class TestController {
         const fileName = path.resolve(process.cwd(), "./package.json");
         const packageData = this.files.readJson(fileName, true);
         console.log("mySession:", this.session.getItem("user"));
+        console.log("ssid:", ssid);
         this.session.setItem("user", "elmer_" + Date.now());
         if(packageData) {
             return {
@@ -35,6 +37,10 @@ export class TestController {
     getRandmonText(@QueryParam("length") len: number) {
         const lenValue = utils.isNumeric(len) ? len : 6;
         return utils.getRandomText(lenValue);
+    }
+    @$beforeRouteInit()
+    testInit() {
+        console.log("init");
     }
 }
 

@@ -13,6 +13,7 @@ import { configState } from "../data/config";
 import { RouterController } from "../Controller/RouterController";
 import { Middleware } from "./Middleware";
 import { SessionService } from "../session";
+import { callHook } from "./Decorators";
 
 interface IApplication {
     main(app: Express): void;
@@ -27,6 +28,8 @@ class Application implements IApplication {
     @GetLogger
     public logger: Logger;
 
+    public configApplication!: any;
+
     constructor(
         private controller: RouterController,
         private middleware: Middleware,
@@ -35,6 +38,7 @@ class Application implements IApplication {
     public main(app: Express): any {
         if(!utils.isEmpty(this.serverConfig.staticPath)) {
             this.logger.info(`Resource Path: ${this.serverConfig.staticPath}`);
+            callHook(this.configApplication, "onBeforeStaticInit", app);
             if(utils.isEmpty(this.serverConfig.staticRoute)) {
                 app.use(express.static(this.serverConfig.staticPath));
             } else {
@@ -44,8 +48,7 @@ class Application implements IApplication {
         app.use(json());
         this.session.init(app);
         this.middleware.use(app);
-        this.controller.routeListen(app);
-
+        this.controller.routeListen(app, this.configApplication);
         return Promise.resolve();
     }
     public listen(app: Express): void {
@@ -107,6 +110,7 @@ export const invokeApplication = (ConfigApplication: new(...args:any) => any, ) 
     const application = createInstance(Application);
     const instanceId = Reflect.getMetadata(CONST_DECORATOR_FOR_MODULE_INSTANCEID, application);
     const configApplication = createInstance(ConfigApplication, instanceId);
+    application.configApplication = configApplication;
     invokeSession(httpApp);
     invokeMain(configApplication, application, httpApp);
     return application;
