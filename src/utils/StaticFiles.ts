@@ -52,8 +52,13 @@ export class StaticFiles {
     writeFile(fileName: string, data: any, opt?: fs.WriteFileOptions): void {
         fs.writeFileSync(fileName, data, opt);
     }
-    readDirSync(path: string): string[] {
-        return fs.readdirSync(path, "utf-8");
+    readDirSync(pathname: string): string[] {
+        return fs.existsSync(pathname) ? fs.readdirSync(pathname, "utf-8") : [];
+    }
+    preadDir(pathname: string, callback: (err: NodeJS.ErrnoException, files: fs.Dirent[]) => void) {
+        if(fs.existsSync(pathname)) {
+            fs.readdir(pathname, { encoding: "utf-8", withFileTypes: true }, callback);
+        }
     }
     /**
      * 检查目录，不存在自动创建
@@ -65,7 +70,7 @@ export class StaticFiles {
         const rootStrValue = rootStr.replace(/\\/g, "/");
         const rootPathValue = rootPath.replace(/\\/g, "/");
         if(rootStrValue !== rootPathValue) {
-            throw new Error("只允许在安全目录创建");
+            throw new Error(`只允许在安全目录创建。保存目录：${checkPath},根目录：${rootPath}。`);
         } else {
             const leftPath = checkPath.substr(rootPath.length).replace(/\\/g, "/");
             const leftPathArr = leftPath.split("/");

@@ -11,6 +11,6 @@ export class Middleware {
 
     }
     use(app: Express): void {
-        this.crossOrigin.use(app);
+        // this.crossOrigin.use(app);
     }
 }

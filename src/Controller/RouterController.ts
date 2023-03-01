@@ -12,7 +12,7 @@ import { getObjFromInstance } from "../core/Module";
 import { utils } from "elmer-common";
 import { GetLogger, Logger } from "../logs";
 import { SessionService } from "../session";
-import { callHook } from "../core/Decorators";
+import { callHook, callInterceptor } from "../core/Decorators";
 import com from "../utils/utils";
 
 type TypeFactory = new(...args:any) => any;
@@ -33,6 +33,13 @@ export class RouterController {
         const controllers: TypeFactory[] = getControllers();
         this.logger.info('Initialize route: ');
         callHook(configApplication, "onBeforeRouteInit", app);
+        app.use("*", (req, res, next) => {
+            callInterceptor(configApplication, req, res).then(() => {
+                next();
+            }).catch((err) => {
+                next(err);
+            });
+        });
         controllers.forEach((Controller:TypeFactory) => {
             this.ctrlListen(Controller, app);
         });

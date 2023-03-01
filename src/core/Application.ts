@@ -11,9 +11,11 @@ import { Logger, GetLogger } from "../logs";
 import { StateStore } from "./StateManage";
 import { configState } from "../data/config";
 import { RouterController } from "../Controller/RouterController";
+import { GetResponse, GetRequest } from "../Controller/Request";
 import { Middleware } from "./Middleware";
 import { SessionService } from "../session";
-import { callHook } from "./Decorators";
+import { callHook, Interceptor, callInterceptor } from "./Decorators";
+import { Security } from "../module/Security";
 
 interface IApplication {
     main(app: Express): void;
@@ -33,7 +35,8 @@ class Application implements IApplication {
     constructor(
         private controller: RouterController,
         private middleware: Middleware,
-        private session: SessionService
+        private session: SessionService,
+        private security: Security
     ) {}
     public main(app: Express): any {
         if(!utils.isEmpty(this.serverConfig.staticPath)) {
@@ -45,6 +48,13 @@ class Application implements IApplication {
                 app.use(this.serverConfig.staticRoute, express.static(this.serverConfig.staticPath));
             }
         }
+        app.use("*", (req, res, next) => {
+            const checkResult = this.security.crossOriginCheck(req, res);
+            if(!checkResult) {
+                next();
+            }
+        });
+        callInterceptor(this, app);
         app.use(json());
         this.session.init(app);
         this.middleware.use(app);

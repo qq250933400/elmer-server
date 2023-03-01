@@ -107,7 +107,11 @@ export class CrossOrigin implements IMiddleware {
                 }
                 this.logger.debug("Cross origin configuration checking complete");
             }
-            req.method !== "OPTIONS" && next();
+            if(req.method !== "OPTIONS") {
+                next();
+            } else {
+                next({ message: "Access denied.(Cross Origin)"});
+            }
         });
     }
 }

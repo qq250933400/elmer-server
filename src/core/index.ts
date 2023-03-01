@@ -9,6 +9,6 @@ export {
     AppService,
     onInit
 } from "./Module";
-export { createParamDecorator } from "./Decorators";
+export { createParamDecorator, Interceptor } from "./Decorators";
 export * from "./Schema";
 export * from "./StateManage";

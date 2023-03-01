@@ -100,6 +100,7 @@ export const createInstance = <T={}>(Factory: new(...args:any[]) => T, instanceI
     }
     /** Before init params should bind instance id, make sure the inject module can got the id */
     Reflect.defineMetadata(CONST_DECORATOR_FOR_MODULE_INSTANCEID, instanceAppId, Factory);
+    if(!paramTypes) {console.log(paramTypes, Factory)} 
     const paramsInstance: any[] = paramTypes.map((Fn: new(...args:any) => any) => {
         if(classPool.indexOf(Fn) < 0) {
             throw new Error(`${Fn.name}没有注册`);

@@ -6,6 +6,6 @@ export interface IFormatCallbacks {
 
 export const callbacks: IFormatCallbacks = {
     formatPath: (val: string) => {
-        return path.resolve(process.cwd(), val);
+        return typeof val === "string" ? path.resolve(process.cwd(), val) : val;
     }
 };

@@ -1,8 +1,9 @@
-import { queueCallFunc } from "elmer-common";
+import { queueCallFunc, utils } from "elmer-common";
 import "reflect-metadata";
 import {
     CONST_DECORATOR_FOR_MODULE_METHOD,
-    CONST_DECORATOR_FOR_FUNC_HOOK
+    CONST_DECORATOR_FOR_FUNC_HOOK,
+    CONST_DECORATOR_FOR_INTERCEPTORS
 } from "../data/const";
 
 interface ICreateFuncParamDecOpt {
@@ -81,6 +82,46 @@ export const callHook = (target: any, lifeKey: keyof IOnHook, ...args: any[]) =>
                 id: "func_" + index,
                 params: param
             };
+        }
+    });
+}
+
+export const Interceptor = (opt?: any) => (target: any, attrKey: string, descriptor: PropertyDescriptor) => {
+    const interceptors = Reflect.getMetadata(CONST_DECORATOR_FOR_INTERCEPTORS, target) || [];
+    const uid: string = "Route_" + utils.guid();
+    interceptors.push({
+        uid,
+        methodName: attrKey,
+        callback: descriptor.value,
+        opt
+    });
+    Reflect.defineMetadata(CONST_DECORATOR_FOR_INTERCEPTORS, interceptors, target);
+}
+
+export const callInterceptor = (target: any, ...args: any[]) => {
+    return new Promise((resolve, reject) => {
+        const interceptors = Reflect.getMetadata(CONST_DECORATOR_FOR_INTERCEPTORS, target) || Reflect.getMetadata(CONST_DECORATOR_FOR_INTERCEPTORS, target.constructor) || [];
+        if(interceptors.length > 0) {
+            let index = -1;
+            queueCallFunc(interceptors, (_, { callback, methodName }) => {
+                const params = getParamsFromMethodDecorator(target, methodName,...args);
+                return callback.apply(target, params); 
+            }, {
+                throwException: true,
+                paramConvert: ((params: any) => {
+                    index += 1;
+                    return ({
+                        id: "intercepts_" + index,
+                        params
+                    }) as any;
+                }) as any
+            }).then(() => {
+                resolve({});
+            }).catch((err) => {
+                reject(err?.exception?.exception || err?.exception || err);
+            });
+        } else {
+            resolve({});
         }
     });
 }

@@ -31,8 +31,8 @@ export class SessionService {
     ) {}
     init(app: Express): void {
         app.use(cookieParser());
-        this.clearSession(this.config.savePath);
-        if(this.config.enabled) {
+        this.clearSession(this.config?.savePath);
+        if(this.config?.enabled) {
             this.configCheck();
             app.use((req: Request, res: Response, next: Function) => {
                 this.sessionState(req, res);

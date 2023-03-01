@@ -9,7 +9,7 @@ import { invokeApplication } from "./Application";
 import { onHook } from "./Decorators";
 
 export const BootApplication = (Target: new(...args:any) => any): void => {
-    AppService(Target);console.log("beforeBootApplication;");
+    AppService(Target);
     Reflect.defineMetadata(CONST_DECORATOR_FOR_MODULE_BOOTAPPLICATION, CONST_BOOTAPPLICATION_MODULE_FLAG, Target);   
 }
 
