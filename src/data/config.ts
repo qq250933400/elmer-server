@@ -14,5 +14,6 @@ export const configState = createStateActions<TypeConfigStateData>("applicationC
     Email: null,
     Log: null,
     Security: null,
-    Session: null
+    Session: null,
+    others: null
 });
