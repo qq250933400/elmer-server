@@ -39,8 +39,8 @@ class Application implements IApplication {
         private security: Security
     ) {}
     public main(app: Express): any {
-        if(!utils.isEmpty(this.serverConfig.staticPath)) {
-            this.logger.info(`Resource Path: ${this.serverConfig.staticPath}`);
+        if(!utils.isEmpty(this.serverConfig?.staticPath)) {
+            this.logger.info(`Resource Path: ${this.serverConfig?.staticPath}`);
             callHook(this.configApplication, "onBeforeStaticInit", app);
             if(utils.isEmpty(this.serverConfig.staticRoute)) {
                 app.use(express.static(this.serverConfig.staticPath));
@@ -63,8 +63,8 @@ class Application implements IApplication {
     }
     public listen(app: Express): void {
         app.listen(
-            this.serverConfig.port || 80,
-            this.serverConfig.host || "0.0.0.0"
+            this.serverConfig?.port || 80,
+            this.serverConfig?.host || "0.0.0.0"
         );
     }
 }
