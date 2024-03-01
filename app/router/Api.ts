@@ -1,11 +1,24 @@
 import { Autowired } from "elmer-common";
-import { Controller, RequestMapping, ExceptionHandler, GetRequestBody, utils, Email, GetConfig, IConfigServer, StaticFiles, GetResponse } from "../../src";
+import { Controller, RequestMapping, Exception, ExceptionHandler, GetRequestBody, utils, Email, GetConfig, IConfigServer, StaticFiles, GetResponse } from "../../src";
 import { Response } from "express";
 
 type TypeRequestBody = {
     text: string;
 };
 
+class UserError extends Error {
+    private _data: any;
+    constructor(message: string, data?: any) {
+        super(message);
+        this._data = data;
+    }
+    set data(newData: any) {
+        this._data = newData;
+    }
+    get data() {
+        return this._data;
+    }
+};
 
 @Controller("api")
 export class Api {
@@ -20,9 +33,11 @@ export class Api {
 
     @RequestMapping("/guid", "GET")
     guid(@GetResponse response: Response) {
-        response.status(400);
+        // response.status(400);
         console.log("---UpdateRouterStatus--", 400);
-        throw new Error("Error Handle");
+        throw new Exception("Error Handle", {
+            status: 403
+        });
         return {
             uuid: utils.guid()
         };

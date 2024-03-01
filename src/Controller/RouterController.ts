@@ -14,6 +14,7 @@ import { utils, queueCallFunc } from "elmer-common";
 import { GetLogger, Logger } from "../logs";
 import { SessionService } from "../session";
 import { callHook, callInterceptor } from "../core/Decorators";
+import { Exception } from "../core/Exception";
 import com from "../utils/utils";
 
 type TypeFactory = new(...args:any) => any;
@@ -134,8 +135,9 @@ export class RouterController {
         this.session.unRegiste(uid);
         delete this.objPool[uid];
     }
-    private exceptionHandle(req: Request, res: Response, next: Function, err: Error, controller: any, route: TypeDefineRoute): void {
+    private exceptionHandle(req: Request, res: Response, next: Function, err: Exception, controller: any, route: TypeDefineRoute): void {
         const handlers = Reflect.getMetadata(CONST_DECORATOR_CONTROLLER_EXCEPTION, controller);
+        const errorData = err.data;
         this.logger.error(`(500) ${err.message}`);
         console.error(err);
         if(handlers && handlers.length > 0) {
@@ -143,13 +145,26 @@ export class RouterController {
                 const ctrlParams = getParamsFromMethodDecorator(controller, handler.callbackName, req, res, next);
                 const excpetionData = handler.callback.apply(controller, ctrlParams);
                 if(excpetionData) {
+                    if(200 === res.statusCode) {
+                        // 当excpetion拦截器没有设置error code时，从error里面抓取，获取不到默认设置500
+                        if(errorData?.status) {
+                            res.status(errorData.status);
+                        } else {
+                            res.status(500);
+                        }
+                    }
                     res.send(excpetionData);
                     return;
                 }
             }
         }
-        res.status(500);
-        res.send(err || {
+        
+        if(errorData?.status) {
+            res.status(errorData.status);
+        } else {
+            res.status(500);
+        }
+        res.send(errorData?.data || err || {
             statusCode: "500",
             message: "应用程序内部错误，请联系管理员。",
             error: err
