@@ -38,9 +38,5 @@ export class TestController {
         const lenValue = utils.isNumeric(len) ? len : 6;
         return utils.getRandomText(lenValue);
     }
-    @$beforeRouteInit()
-    testInit() {
-        console.log("init");
-    }
 }
 

@@ -58,34 +58,39 @@ export const loadConfigSchema = (Target: new(...args: any[]) => any) => {
 export const Config = (fileName: string, name?: TypeConfigOptionKey, schema?: any) => {
     return (Target: new(...args: any[]) => any) => {
         delegateInit((targetObj: any) => {
-            const localFile = path.resolve(process.cwd(), fileName);
-            if(fs.existsSync(localFile)) {
-                const configData = readConfigData(localFile);
-                const saveName = name || "Application";
-                const schemaObj: Schema = getObjFromInstance(Schema as any, targetObj);
-                const stateObj: StateManage = getObjFromInstance(StateManage as any, targetObj);
-                const stateActions = stateObj.invoke<TypeConfigStateData>(configState.stateName);
-                loadConfigSchema(targetObj);
-                if(schema && !utils.isEmpty(name)) {
-                    schemaObj.addSchema(name, schema);
-                }
-                if(name === "Security") {
-                    schemaObj.validate(configData, saveName);
-                    stateActions.Security.set(schemaObj.format(configData, schemaObj.getSchemas().Security, callbacks) as any,);
-                } else if(utils.isEmpty(name)) {
-                    schemaObj.validate(configData, saveName);
-                    stateActions.Server.set(schemaObj.format(configData?.Server, schemaObj.getSchemas().Server, callbacks) as any);
-                    stateActions.DataBase.set(schemaObj.format(configData?.DataBase, schemaObj.getSchemas().DataBase, callbacks) as any);
-                    stateActions.Log.set(schemaObj.format(configData?.Log || {}, schemaObj.getSchemas().Log, callbacks) as any);
-                    stateActions.Email.set(schemaObj.format(configData?.Email || {}, schemaObj.getSchemas().Email, callbacks) as any);
-                    stateActions.Session.set(schemaObj.format(configData?.Session || {}, schemaObj.getSchemas().Session, callbacks) as any);
+            try {
+                const localFile = path.resolve(process.cwd(), fileName);
+                if(fs.existsSync(localFile)) {
+                    const configData = readConfigData(localFile);
+                    const saveName = name || "Application";
+                    const schemaObj: Schema = getObjFromInstance(Schema as any, targetObj);
+                    const stateObj: StateManage = getObjFromInstance(StateManage as any, targetObj);
+                    const stateActions = stateObj.invoke<TypeConfigStateData>(configState.stateName);
+                    loadConfigSchema(targetObj);
+                    if(schema && !utils.isEmpty(name)) {
+                        schemaObj.addSchema(name, schema);
+                    }
+                    if(name === "Security") {
+                        schemaObj.validate(configData, saveName);
+                        stateActions.Security.set(schemaObj.format(configData, schemaObj.getSchemas().Security, callbacks) as any,);
+                    } else if(utils.isEmpty(name)) {
+                        schemaObj.validate(configData, saveName);
+                        stateActions.Server.set(schemaObj.format(configData?.Server, schemaObj.getSchemas().Server, callbacks) as any);
+                        stateActions.DataBase.set(schemaObj.format(configData?.DataBase, schemaObj.getSchemas().DataBase, callbacks) as any);
+                        stateActions.Log.set(schemaObj.format(configData?.Log || {}, schemaObj.getSchemas().Log, callbacks) as any);
+                        stateActions.Email.set(schemaObj.format(configData?.Email || {}, schemaObj.getSchemas().Email, callbacks) as any);
+                        stateActions.Session.set(schemaObj.format(configData?.Session || {}, schemaObj.getSchemas().Session, callbacks) as any);
+                    } else {
+                        const otherConfig = stateActions.others.get() || {};
+                        otherConfig[name] = configData;
+                        stateActions.others.set(otherConfig);
+                    }
                 } else {
-                    const otherConfig = stateActions.others.get() || {};
-                    otherConfig[name] = configData;
-                    stateActions.others.set(otherConfig);
+                    throw new Error("指定配置文件不存在。");
                 }
-            } else {
-                throw new Error("指定配置文件不存在。");
+            } catch(err) {
+                console.error(err);
+                throw err;
             }
         })(Target);
     }

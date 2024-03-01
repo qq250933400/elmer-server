@@ -10,7 +10,6 @@ export const GetRequestBody = (name?: string) => (target: Object, methodName: st
         paramIndex
     }, () => {
         return (req: Request) => {
-            console.log(req.body);
             return !utils.isEmpty(name) ? req.body[name] : req.body;
         };
     });

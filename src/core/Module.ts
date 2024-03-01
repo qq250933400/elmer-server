@@ -35,7 +35,6 @@ const defineFactoryService = (Target: new(...args: any[]) => any, type: EnumFact
 };
 const invokeInit = (Target: new(...args:any[]) => any, obj: any) => {
     const initCallbacks:Function[] = Reflect.getMetadata(CONST_DECORATOR_FOR_MODULE_INIT, Target) || [];
-    // const instanceId = Reflect.getMetadata(CONST_DECORATOR_FOR_MODULE_INSTANCEID, Target);
     let index = 0;
     if(initCallbacks.length > 0) {
         queueCallFunc(initCallbacks as any[], (opt, fn: Function) => {
@@ -117,7 +116,7 @@ export const createInstance = <T={}>(Factory: new(...args:any[]) => T, instanceI
                 return createInstance(Fn as any, instanceAppId, callback);
             } else if(classType === EnumFactoryModuleType.AppService) {
                 const objId = Reflect.getMetadata(CONST_DECORATOR_FOR_MODULE_CLASSID, Fn);
-                if(instancePool[instanceAppId] && instancePool[instanceAppId][objId]) {
+                if(instancePool[instanceAppId]?.[objId]) {
                     return instancePool[instanceAppId][objId];
                 } else {
                     if(!instancePool[instanceAppId]) {

@@ -5,11 +5,12 @@ import { getControllers, TypeDefineRoute, TypeRequestMethod } from "./decorators
 import {
     CONST_DECORATOR_CONTROLLER_ROUTER,
     CONST_DECORATOR_CONTROLLER_NAMESPACE,
-    CONST_DECORATOR_CONTROLLER_REQUESTID
+    CONST_DECORATOR_CONTROLLER_REQUESTID,
+    CONST_DECORATOR_CONTROLLER_EXCEPTION
 } from "../data";
 import { getParamsFromMethodDecorator } from "../core/Decorators";
 import { getObjFromInstance } from "../core/Module";
-import { utils } from "elmer-common";
+import { utils, queueCallFunc } from "elmer-common";
 import { GetLogger, Logger } from "../logs";
 import { SessionService } from "../session";
 import { callHook, callInterceptor } from "../core/Decorators";
@@ -45,6 +46,11 @@ export class RouterController {
         });
         callHook(configApplication, "onAfterRouteInit", app);
     }
+    /**
+     * 创建路由监听事件
+     * @param Controller 
+     * @param app 
+     */
     private ctrlListen(Controller: TypeFactory, app: Express): void {
         const namespace = Reflect.getMetadata(CONST_DECORATOR_CONTROLLER_NAMESPACE, Controller);
         const routers = Reflect.getMetadata(CONST_DECORATOR_CONTROLLER_ROUTER, Controller);
@@ -87,6 +93,12 @@ export class RouterController {
             });
         }
     }
+    /**
+     * 路由监听回调，控制器路由调用后的处理
+     * @param Controller 
+     * @param route 
+     * @returns 
+     */
     private createRouteHandler(Controller: TypeFactory, route: TypeDefineRoute): TypeRouteHandler {
         return (req: Request, res: Response, next: Function) => {
             const controller = this.createController(Controller);
@@ -102,13 +114,11 @@ export class RouterController {
                     res.send(resData);
                     this.releaseController(controller);
                 }).catch((err) => {
-                    res.status(500);
-                    this.exceptionHandle(req, res, next, err);
+                    this.exceptionHandle(req, res, next, err, controller, route);
                     this.releaseController(controller);
                 });
             } catch(e) {
-                res.status(500);
-                this.exceptionHandle(req, res, next, e);
+                this.exceptionHandle(req, res, next, e, controller, route);
                 this.releaseController(controller);
             }
         };
@@ -124,13 +134,25 @@ export class RouterController {
         this.session.unRegiste(uid);
         delete this.objPool[uid];
     }
-    private exceptionHandle(req: Request, res: Response, next: Function, err: Error): void {
-        this.logger.error(`(T500) ${err.message}`);
-        this.logger.error(err.stack);
+    private exceptionHandle(req: Request, res: Response, next: Function, err: Error, controller: any, route: TypeDefineRoute): void {
+        const handlers = Reflect.getMetadata(CONST_DECORATOR_CONTROLLER_EXCEPTION, controller);
+        this.logger.error(`(500) ${err.message}`);
+        console.error(err);
+        if(handlers && handlers.length > 0) {
+            for(const handler of handlers) {
+                const ctrlParams = getParamsFromMethodDecorator(controller, handler.callbackName, req, res, next);
+                const excpetionData = handler.callback.apply(controller, ctrlParams);
+                if(excpetionData) {
+                    res.send(excpetionData);
+                    return;
+                }
+            }
+        }
         res.status(500);
-        res.send({
-            statusCode: "T500",
-            message: "Something went wrong in application."
+        res.send(err || {
+            statusCode: "500",
+            message: "应用程序内部错误，请联系管理员。",
+            error: err
         });
     }
     private createController(Controller: TypeFactory): any {

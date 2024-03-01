@@ -1,6 +1,6 @@
 import { Autowired } from "elmer-common";
-import { Controller, RequestMapping, GetRequestBody, utils, Email, GetConfig, IConfigServer, StaticFiles } from "../../src";
-import { TestModel } from "../model/TestModel";
+import { Controller, RequestMapping, ExceptionHandler, GetRequestBody, utils, Email, GetConfig, IConfigServer, StaticFiles, GetResponse } from "../../src";
+import { Response } from "express";
 
 type TypeRequestBody = {
     text: string;
@@ -9,17 +9,20 @@ type TypeRequestBody = {
 
 @Controller("api")
 export class Api {
-    @Autowired()
-    private email: Email;
+
     @GetConfig("Server")
     private config: IConfigServer;
 
     constructor(
-        private fileObj: StaticFiles
+        private fileObj: StaticFiles,
+        private email: Email
     ) {}
 
     @RequestMapping("/guid", "GET")
-    guid() {
+    guid(@GetResponse response: Response) {
+        response.status(400);
+        console.log("---UpdateRouterStatus--", 400);
+        throw new Error("Error Handle");
         return {
             uuid: utils.guid()
         };
@@ -29,7 +32,7 @@ export class Api {
         return utils.aseEncode(body.text, this.config.publicKey);
     }
 
-    @RequestMapping("/email", "POST")
+    @RequestMapping("/email", "GET")
     sendEmail() {
         return this.email.send({
             toUsers: ["250933400@qq.com"],
@@ -49,5 +52,11 @@ export class Api {
     @RequestMapping("/test/json", "GET")
     testJSON() {
         return this.fileObj.readJson("./test.json");
+    }
+    @ExceptionHandler()
+    private exceptionHandler() {
+        return {
+            message: "new handler"
+        }
     }
 }

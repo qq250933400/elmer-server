@@ -39,6 +39,9 @@ class Application implements IApplication {
         private security: Security
     ) {}
     public main(app: Express): any {
+        if(!this.serverConfig) {
+            throw new Error("读取server配置信息失败！");
+        }
         if(!utils.isEmpty(this.serverConfig?.staticPath)) {
             this.logger.info(`Resource Path: ${this.serverConfig?.staticPath}`);
             callHook(this.configApplication, "onBeforeStaticInit", app);

@@ -3,7 +3,8 @@ import "reflect-metadata";
 import {
     CONST_DECORATOR_FOR_MODULE_METHOD,
     CONST_DECORATOR_FOR_FUNC_HOOK,
-    CONST_DECORATOR_FOR_INTERCEPTORS
+    CONST_DECORATOR_FOR_INTERCEPTORS,
+    CONST_DECORATOR_CONTROLLER_EXCEPTION
 } from "../data/const";
 
 interface ICreateFuncParamDecOpt {
@@ -72,17 +73,25 @@ export const callHook = (target: any, lifeKey: keyof IOnHook, ...args: any[]) =>
     const defineHooks = Reflect.getMetadata(CONST_DECORATOR_FOR_FUNC_HOOK, target) || {};
     const lifeHook: IHookInfo[] = defineHooks[lifeKey] || [];
     let index = -1;
-    return queueCallFunc(lifeHook as any[], (_, param: IHookInfo) => {
-        return param.callback.apply(param.handler, [...args]);
-    }, {
-        throwException: true,
-        paramConvert: (param) => {
-            index += 1;
-            return {
-                id: "func_" + index,
-                params: param
-            };
-        }
+    return new Promise((resolve, reject) => {
+        queueCallFunc(lifeHook as any[], (_, param: IHookInfo) => {
+            return param.callback.apply(param.handler, [...args, param]);
+        }, {
+            throwException: true,
+            paramConvert: (param) => {
+                index += 1;
+                return {
+                    id: "func_" + index,
+                    params: param
+                };
+            }
+        }).then((resp: any) => {
+            resolve(resp);
+        }).catch((err) => {
+            const targetName = target.constructor.name;
+            console.error(`调用hook失败：${targetName}.${lifeKey} error: ${err}`);
+            reject(err);
+        });
     });
 }
 
@@ -124,4 +133,16 @@ export const callInterceptor = (target: any, ...args: any[]) => {
             resolve({});
         }
     });
+};
+
+export const ExceptionHandler = (opt?: any) => (target: any, attrKey: string, descriptor: PropertyDescriptor) => {
+    const exceptionHandlers = Reflect.getMetadata(CONST_DECORATOR_CONTROLLER_EXCEPTION, target) || [];
+    const uid: string = "exception_" + utils.guid();
+    exceptionHandlers.push({
+        uid,
+        methodName: attrKey,
+        callback: descriptor.value,
+        opt
+    });
+    Reflect.defineMetadata(CONST_DECORATOR_CONTROLLER_EXCEPTION, exceptionHandlers, target);
 }

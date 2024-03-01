@@ -8,6 +8,10 @@ import { AppService, delegateInit } from "./Module";
 import { invokeApplication } from "./Application";
 import { onHook } from "./Decorators";
 
+/**
+ * 注册启动类
+ * @param Target 目标类
+ */
 export const BootApplication = (Target: new(...args:any) => any): void => {
     AppService(Target);
     Reflect.defineMetadata(CONST_DECORATOR_FOR_MODULE_BOOTAPPLICATION, CONST_BOOTAPPLICATION_MODULE_FLAG, Target);   
@@ -28,7 +32,8 @@ const applicationHook = (target: any) => {
         delegateInit(() => {
             const flag = Reflect.getMetadata(CONST_DECORATOR_FOR_MODULE_BOOTAPPLICATION, target.constructor);
             if(flag !== CONST_BOOTAPPLICATION_MODULE_FLAG) {
-                throw new Error("onBeforeRouteInit只能在BootApplication类中使用");
+                const factoryName = target.constructor.name;
+                throw new Error(`onBeforeRouteInit只能在通过BootApplication注解注册的类中使用.(${factoryName}.)`);
             }
         })(target.constructor);
         Reflect.defineMetadata(CONST_DECORATOR_FOR_FUNC_HOOK_INIT, true, target);
