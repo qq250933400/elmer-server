@@ -115,7 +115,7 @@ export class RouterController {
                     res.send(resData);
                     this.releaseController(controller);
                 }).catch((err) => {
-                    this.exceptionHandle(req, res, next, err, controller, route);
+                    this.exceptionHandle(req, res, next, err || {}, controller, route);
                     this.releaseController(controller);
                 });
             } catch(e) {
