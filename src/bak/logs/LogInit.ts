@@ -6,8 +6,8 @@ import { GetConfig } from "../config";
 import { Logger as Log4js } from "log4js";
 import { AppService, createInstance } from "../core/Module";
 import { CONST_DECORATOR_FOR_MODULE_INSTANCEID } from "../data";
-import { StaticFiles } from "../utils/StaticFiles";
-import utils from "../utils/utils";
+import { StaticFiles } from "../../utils/StaticFiles";
+import utils from "../../utils/utils";
 
 @AppService
 export class SevLogger {

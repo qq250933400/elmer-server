@@ -1,151 +1,69 @@
-import "reflect-metadata";
-import * as fs from "fs";
-import * as path from "path";
-import { parse } from "yaml";
-import ApplicationConfigSchema from "./config.schema.application";
-import DBConfigSchema from './config.schema.db';
-import ServerConfigSchema from './config.schema.server';
-import LogConfigSchema from "./config.schema.log";
-import CrossSiteConfigSchema from "./config.schema.crossSite";
-import EmailConfigSchema from "./config.schema.email";
-import SessionConfigSchema from "./config.schema.session";
 import utils from "../utils/utils";
-import { IConfigApplication } from "./IConfigApplication";
-import { TypeConfigOptionKey, IConfigOption } from "./IConfiguration";
-import { getObjFromInstance, delegateInit } from "../core/Module";
-import { StateManage } from "../core/StateManage";
-import { configState, TypeConfigStateData } from "../data/config";
-import { callbacks } from "./config.callbacks";
-import { Schema } from "../core/Schema";
+import {
+    META_KEY_INSTANCE_ID,
+    COMMAND_KEY_APP_ENV,
+    COMMAND_KEY_CONFIG_PATH,
+    META_KEY_CONFIG_INFO
+} from "../data/constants";
+import { v7 as uuid } from "uuid";
+import { Application } from "../Application/Core/Application";
+import { getModuleObj } from "../Annotation/createInstance";
+import { IConfigApplication } from "./interface/IConfigApplication";
 
-type TypeConfiguration = IConfigApplication & IConfigOption;
+import path from "path";
+import fs from "fs";
+import lodash from "lodash";
 
-const readConfigData = (fileName: string):any => {
-    const txt = fs.readFileSync(fileName, "utf8");
-    if(/\.yml/i.test(fileName)) {
-        return parse(txt);
-    } else if(/\.json/i.test(fileName)) {
-        return JSON.parse(txt);
-    }
-};
-
-export const loadConfigSchema = (Target: new(...args: any[]) => any) => {
-    const schemaObj: Schema = getObjFromInstance(Schema as any, Target);
-    schemaObj.addSchema("Application", ApplicationConfigSchema);
-    schemaObj.addSchema("DataBase", DBConfigSchema);
-    schemaObj.addSchema("Server", ServerConfigSchema);
-    schemaObj.addSchema("Log", LogConfigSchema);
-    schemaObj.addSchema("Security", CrossSiteConfigSchema);
-    schemaObj.addSchema("Email", EmailConfigSchema);
-    schemaObj.addSchema("Session", SessionConfigSchema);
-    return {
-        Application: ApplicationConfigSchema,
-        DataBase: DBConfigSchema,
-        Server: ServerConfigSchema,
-        Log: LogConfigSchema,
-        Security: CrossSiteConfigSchema,
-        Email: EmailConfigSchema,
-        Session: SessionConfigSchema
+/**
+ * 装载配置文件信息, 必须在启动类使用此装饰器配置才能生效
+ * @param fileName 配置文件路径
+ * @returns 
+ */
+export const Config = (fileName: string) => (Target: new(...args: any[]) => any) => {
+    const env = utils.getCommand(process.argv, COMMAND_KEY_APP_ENV);
+    const configPath = utils.getCommand(process.argv, COMMAND_KEY_CONFIG_PATH) || "./";
+    const rootPath = process.env["INIT_CWD"];
+    const baseConfigFileName = path.resolve(rootPath,configPath, fileName);
+    const configData = {
+        base: baseConfigFileName,
+        env: null
     };
+    const saveConfigInfo: any[] = Reflect.getMetadata(META_KEY_CONFIG_INFO, Target) || [];
+    const saveId = uuid();
+    if(!fs.existsSync(baseConfigFileName)) {
+        throw new Error(`配置文件不存在: ${baseConfigFileName}`);
+    }
+    if(!utils.isEmpty(env)) {
+        const name = utils.getFileNameEx(fileName);
+        const fileType = utils.getFileType(fileName);
+        const envConfigFileName = path.resolve(rootPath,configPath, `./${name}-${env}.${fileType}`);
+        if(fs.existsSync(envConfigFileName)) {
+            configData.env = envConfigFileName;
+        }
+    }
+    saveConfigInfo.push({
+        id: saveId,
+        data: configData
+    });
+    Reflect.defineMetadata(META_KEY_CONFIG_INFO, saveConfigInfo, Target);
 };
 /**
- * 读取配置，支持yml,json两种数据格式
- * @param fileName 配置文件相对路径
- * @param name 配置保存名称,Application, DB, Server
- * @param schema 检验规则[可选]
+ * 获取配置信息
+ * @param key - 配置Category key
+ * @param id - 配置Category 下的id
  * @returns 
  */
-export const Config = (fileName: string, name?: TypeConfigOptionKey, schema?: any) => {
-    return (Target: new(...args: any[]) => any) => {
-        delegateInit((targetObj: any) => {
-            try {
-                const localFile = path.resolve(process.cwd(), fileName);
-                if(fs.existsSync(localFile)) {
-                    const configData = readConfigData(localFile);
-                    const saveName = name || "Application";
-                    const schemaObj: Schema = getObjFromInstance(Schema as any, targetObj);
-                    const stateObj: StateManage = getObjFromInstance(StateManage as any, targetObj);
-                    const stateActions = stateObj.invoke<TypeConfigStateData>(configState.stateName);
-                    loadConfigSchema(targetObj);
-                    if(schema && !utils.isEmpty(name)) {
-                        schemaObj.addSchema(name, schema);
-                    }
-                    if(name === "Security") {
-                        schemaObj.validate(configData, saveName);
-                        stateActions.Security.set(schemaObj.format(configData, schemaObj.getSchemas().Security, callbacks) as any,);
-                    } else if(utils.isEmpty(name)) {
-                        schemaObj.validate(configData, saveName);
-                        const serverConfig: any = schemaObj.format(configData?.Server, schemaObj.getSchemas().Server, callbacks);
-                        stateActions.Server.set({
-                            ...configData.Server,
-                            ...serverConfig
-                        } as any);
-                        stateActions.DataBase.set(schemaObj.format(configData?.DataBase, schemaObj.getSchemas().DataBase, callbacks) as any);
-                        stateActions.Log.set(schemaObj.format(configData?.Log || {}, schemaObj.getSchemas().Log, callbacks) as any);
-                        stateActions.Email.set(schemaObj.format(configData?.Email || {}, schemaObj.getSchemas().Email, callbacks) as any);
-                        stateActions.Session.set(schemaObj.format(configData?.Session || {}, schemaObj.getSchemas().Session, callbacks) as any);
-                    } else {
-                        const otherConfig = stateActions.others.get() || {};
-                        otherConfig[name] = configData;
-                        stateActions.others.set(otherConfig);
-                    }
-                } else {
-                    throw new Error("指定配置文件不存在。");
-                }
-            } catch(err) {
-                console.error(err);
-                throw err;
+export const GetConfig = <ConfigKey extends keyof IConfigApplication>(key?: ConfigKey, id?: keyof IConfigApplication[ConfigKey]) => (target: Object, propertyKey: string) => {
+    Object.defineProperty(target, propertyKey, {
+        get: () => {
+            const instanceId = Reflect.getMetadata(META_KEY_INSTANCE_ID, target.constructor);
+            const applicationObj = getModuleObj(Application, instanceId);
+            const configData = lodash.get(applicationObj.configuration || {}, key);
+            if(lodash.isEmpty(key)) {
+                return applicationObj.configuration || {};
+            } else {
+                return !lodash.isEmpty(id) ? lodash.get(configData, id) : configData;
             }
-        })(Target);
-    }
+        }
+    });
 };
-
-export const GetConfig = <ConfigKey extends keyof TypeConfiguration>(configKey: ConfigKey, valueKey?: keyof TypeConfiguration[ConfigKey])  => {
-    return (target: any, attribute: string) => {
-        Object.defineProperty(target, attribute, {
-            get: () => {
-                const stateObj: StateManage = getObjFromInstance(StateManage as any, target);
-                const stateActions = stateObj.invoke<TypeConfigStateData>(configState.stateName);
-                if(stateActions[configKey]) {
-                    const configValue = stateActions[configKey].get();
-                    return utils.isEmpty(valueKey) ? configValue : utils.getValue(configValue, valueKey as string);
-                } else {
-                    return null;
-                }
-            }
-        });
-    }
-};
-/**
- * 自定义配置数据
- * @param configKey
- * @returns 
- */
-export const GetUserConfig = <T={}>(configKey: keyof T) => {
-    return (target: any, attribute: string) => {
-        Object.defineProperty(target, attribute, {
-            get: () => {
-                const stateObj: StateManage = getObjFromInstance(StateManage as any, target);
-                const stateActions = stateObj.invoke<TypeConfigStateData>(configState.stateName);
-                const configValue = stateActions.others.get();
-                return utils.isEmpty(configKey) ? null : utils.getValue(configValue, configKey as string);
-            }
-        });
-    }
-}
-
-/**
- * return all the configuration data for current application
- * @returns 
- */
-export const getApplicationConfig = (): TypeConfiguration => {
-    return {} as any;
-}
-
-export * from "./IConfigApplication";
-export * from "./IConfigCrossSite";
-export * from "./IConfigDB";
-export * from "./IConfigEmail";
-export * from "./IConfigLog";
-export * from "./IConfigServer";
-export * from "./IConfigSession";

@@ -1,4 +1,3 @@
-import "./router";
 import { App } from "./App";
 import { startApplication } from "../src";
 // app.listen(port);

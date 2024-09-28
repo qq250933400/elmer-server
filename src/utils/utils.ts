@@ -1,4 +1,4 @@
-import { getApplicationConfig } from "../config";
+import { getApplicationConfig } from "../bak/config";
 import * as crypto from "crypto";
 import * as fs from 'fs';
 import { md5 } from "./md5";
@@ -119,13 +119,6 @@ const toQuery = (obj: any): string => {
 const getUri = <T={}>(queryStr: string, key: string): T => {
     const queryObj = toUri(queryStr);
     return queryObj ? queryObj[key] : null;
-};
-const guid = (): string => {
-    const S4 = ():string => {
-        // tslint:disable-next-line: no-bitwise
-        return (((1 + Math.random())*0x10000) | 0).toString(16).substr(1);
-    };
-    return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4());
 };
 const getValue = <T>(data:object, key:string, defaultValue?: any): T => {
     const keyValue = key !== undefined && key !== null ? key : "";
@@ -255,16 +248,97 @@ const fildMD5Async = (fileName: string): string|null|undefined => {
         return fHash.digest("hex");
     }
 }
-const invoke = function(fn: Function, ...args: any[]): Promise<any> {
+const invoke = function(fn: Function, owner?: any, ...args: any[]): Promise<any> {
     return new Promise((resolve, reject) => {
-        const fResult = fn.apply(this, args);
+        const fResult = fn.apply(owner || this, args);
         if(isPromise(fResult)) {
             fResult.then(resolve).catch(reject);
         } else {
             resolve(fResult);
         }
     });
+};
+const invokeEx = <T extends Object>(obj: T, method: keyof T, ...params: any[]): Promise<any> => {
+    if(typeof obj[method] === "function") {
+        obj[method].bind(obj);
+        return invoke(obj[method], obj, ...params);
+    } else {
+        Promise.reject("The method " + method.toString() + " is not a function");
+    }
+};
+const getCommand = function (command: string[], cmdKey: string) {
+    let result: string;
+    let findKey = false;
+    let findValue = false;
+    const keyReg = /^[\-]{1,}/;
+    const keyValueReg = /^([a-z0-9_]{1,})\=/i;
+    const isCmdKey = /^[\-]{1,}/.test(cmdKey);
+    if (command && command.length > 0) {
+        for (var i = 0; i < command.length; i++) {
+            var cmd = command[i];
+            if (isCmdKey) {
+                if (cmd === cmdKey) {
+                    if (!keyReg.test(command[i + 1])) {
+                        result = command[i + 1] === undefined ? null : command[i + 1];
+                        findValue = i + 1 < command.length;
+                        break;
+                    }
+                }
+            }
+            else {
+                if (!keyReg.test(cmd)) {
+                    var keyMatchValue = cmd.match(keyValueReg);
+                    if (keyMatchValue && keyMatchValue[1] === cmdKey) {
+                        result = cmd.replace(keyValueReg, "");
+                        findValue = true;
+                        break;
+                    }
+                    else {
+                        if (cmd === cmdKey && !keyReg.test(command[i - 1])) {
+                            findKey = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return findValue ? result : (findKey ? null : result);
+};
+
+const getFilePath =  (fileName: string): string => {
+    const tmpFileName = fileName.replace(/\\/g, "/");
+    const lastIndex = tmpFileName.lastIndexOf("/");
+    return tmpFileName.substring(0, lastIndex);
+};
+
+/**
+* 根据文件名获取文件后缀
+* @param fileName 文件名
+* @returns 
+*/
+const getFileType = (fileName: string): string => {
+   const typeM = fileName.match(/\.([a-z0-9]{1,})$/i);
+   return typeM ? typeM[1] : "";
 }
+/**
+ * 获取文件名，包含文件后缀
+ * @param fileName - 文件路径
+ */
+const getFileName = (fileName: string): string => {
+    const tmpFileName = fileName.replace(/\\/g, "/");
+    const lastIndex = tmpFileName.lastIndexOf("/");
+    return lastIndex >= 0 ? tmpFileName.substring(lastIndex + 1) : tmpFileName;
+};
+/**
+ * 获取文件名，不含文件后缀
+ * @param fileName - 文件路径
+ * @returns 
+ */
+const getFileNameEx = (fileName: string): string => {
+    const name = getFileName(fileName);
+    return name.replace(/\.[a-z0-9_]{1,}$/i, "");
+};
+
 export default {
     aseEncode,
     aseDecode,
@@ -282,12 +356,17 @@ export default {
     getRandomText,
     getUri,
     getValue,
-    guid,
+    getCommand,
+    getFilePath,
+    getFileType,
+    getFileName,
+    getFileNameEx,
     fildMD5,
     fildMD5Async,
     toUri,
     toQuery,
     setValue,
     md5,
-    invoke
+    invoke,
+    invokeEx
 };

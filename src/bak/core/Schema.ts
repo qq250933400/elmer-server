@@ -1,5 +1,5 @@
 import { Service } from "./Module";
-import utils from "../utils/utils";
+import utils from "../../utils/utils";
 
 type TypeSchemaPropertyType = "String" | "Array" | "Object" | "Boolean" | "Number";
 type TypeSchemaDataType = TypeSchemaPropertyType | (TypeSchemaPropertyType[]) | String | RegExp;

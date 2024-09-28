@@ -1,6 +1,6 @@
 import { createStateActions } from "../core/StateManage";
 import { IConfigOption } from "../config/IConfiguration";
-import { IConfigApplication } from "../config/IConfigApplication";
+import { IConfigApplication } from "../../Config/interface/IConfigApplication";
 
 interface IConfigState extends IConfigApplication, IConfigOption {
     

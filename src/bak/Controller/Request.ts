@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import { createParamDecorator } from "../core/Decorators";
 import { Request, Response } from "express";
-import utils from '../utils/utils';
+import utils from '../../utils/utils';
 
 export const GetRequestBody = (name?: string) => (target: Object, methodName: string, paramIndex: number) => {
     createParamDecorator({

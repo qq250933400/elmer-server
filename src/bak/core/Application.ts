@@ -1,4 +1,4 @@
-import com from "../utils/utils";
+import com from "../../utils/utils";
 import * as express from "express";
 import * as expressSession from "express-session";
 import { json } from 'body-parser';

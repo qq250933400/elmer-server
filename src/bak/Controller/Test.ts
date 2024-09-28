@@ -1,11 +1,11 @@
 import { RequestMapping, Controller } from "./decorators";
 import { GetSessionId } from "./Request";
-import { StaticFiles } from "../utils/StaticFiles";
+import { StaticFiles } from "../../utils/StaticFiles";
 import { QueryParam } from "./Request";
 import { Session } from "../session";
 import { $beforeRouteInit } from "../core/BootApplication";
 import * as path from "path";
-import utils from "../utils/utils";
+import utils from "../../utils/utils";
 
 @Controller("test")
 export class TestController {

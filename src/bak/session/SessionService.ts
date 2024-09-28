@@ -2,13 +2,13 @@ import "reflect-metadata";
 import { AppService, GetInstanceId } from "../core/Module";
 import { Express, Request, Response } from "express";
 import { GetConfig, IConfigSession, IConfigServer } from "../config";
-import { StaticFiles } from "../utils/StaticFiles";
+import { StaticFiles } from "../../utils/StaticFiles";
 import { GetLogger, Logger } from "../logs";
 import { utils } from "elmer-common";
 import * as cookieParser from "cookie-parser";
 import * as path from "path";
 import * as fs from "fs";
-import com from "../utils/utils";
+import com from "../../utils/utils";
 
 @AppService
 export class SessionService {

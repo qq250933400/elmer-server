@@ -1,13 +1,13 @@
 import "reflect-metadata";
-import { GetConfig, IConfigServer } from "../config";
-import { AppService } from "../core/Module";
+import { GetConfig, IConfigServer } from "../bak/config";
+import { AppService } from "../bak/core/Module";
 import { Request } from "express";
 import utils from "./utils";
 import * as path from "path";
 import * as fs from "fs";
 import { md5 } from "./md5";
-import { Logger } from "log4js";
 import mediaTypes from "./mediaTypes";
+import { v7 as uuid } from "uuid";
 
 type TypeUploadAction = "Connect" | "Data" | "Complete" | "AfterSave";
 
@@ -126,7 +126,7 @@ export class StaticFiles {
             const info = this.readUploadInfo(req);
             const fileId: string = info.fileTempId;
             if(info.fileAction === "Connect") {
-                const tempId = !utils.isEmpty(info.fileHash) ? md5(info.fileHash) : "file_" + utils.guid();
+                const tempId = !utils.isEmpty(info.fileHash) ? md5(info.fileHash) : "file_" + uuid();
                 const infoName = tempId + ".info";
                
                 const saveInfoFile = path.resolve(this.serverConfig.tempPath, infoName);

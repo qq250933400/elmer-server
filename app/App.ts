@@ -1,26 +1,26 @@
-import "reflect-metadata";
-import "./router";
-import { BootApplication, Config, GetConfig, Interceptor, Controller, RequestMapping } from "../src";
 
-@Controller("/")
-class Test {
-    @GetConfig("Server")
-    private config: any;
-    constructor() {
-        console.log("---Config---", this.config);
-    }
-    @RequestMapping("/test")
-    test() {
-        console.log("this.config,", this.config);
+import { BootApplication, AppService, Config, GetConfig } from "../src";
+
+@AppService
+class TestService {
+    say() {
+        console.log("hello world");
     }
 }
 
-@Config("./app/config.yml")
-@Config("./app/corssSite.json", "Security")
+@Config("./config.yml")
+@Config("./email.yml")
 @BootApplication
 export class App {
-    @Interceptor()
-    private testApp() {
-        console.log(arguments);
+    @GetConfig("Server", "port")
+    private config: any;
+    constructor(
+        private testService: TestService
+    ) {
+        console.log("-----Init--App-", this.testService);
+    }
+    private main() {
+        console.log(this.testService.say(), this.config);
     }
 }
+

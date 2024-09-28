@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import CommandHelper from "elmer-common/lib/CommandHelper";
-import { Schema } from "./core/Schema";
-import { ConfigTemplate } from "./module/ConfigTemplate";
+import { Schema } from "./bak/core/Schema";
+import { ConfigTemplate } from "./bak/module/ConfigTemplate";
 
 new CommandHelper(process.argv)
     .author("Elmer S J Mo")

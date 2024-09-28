@@ -15,7 +15,7 @@ import { GetLogger, Logger } from "../logs";
 import { SessionService } from "../session";
 import { callHook, callInterceptor } from "../core/Decorators";
 import { Exception } from "../core/Exception";
-import com from "../utils/utils";
+import com from "../../utils/utils";
 
 type TypeFactory = new(...args:any) => any;
 type TypeRouteHandler = (request: Request, response: Response, next: Function) => any;
