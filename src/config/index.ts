@@ -75,7 +75,11 @@ export const Config = (fileName: string, name?: TypeConfigOptionKey, schema?: an
                         stateActions.Security.set(schemaObj.format(configData, schemaObj.getSchemas().Security, callbacks) as any,);
                     } else if(utils.isEmpty(name)) {
                         schemaObj.validate(configData, saveName);
-                        stateActions.Server.set(schemaObj.format(configData?.Server, schemaObj.getSchemas().Server, callbacks) as any);
+                        const serverConfig: any = schemaObj.format(configData?.Server, schemaObj.getSchemas().Server, callbacks);
+                        stateActions.Server.set({
+                            ...configData.Server,
+                            ...serverConfig
+                        } as any);
                         stateActions.DataBase.set(schemaObj.format(configData?.DataBase, schemaObj.getSchemas().DataBase, callbacks) as any);
                         stateActions.Log.set(schemaObj.format(configData?.Log || {}, schemaObj.getSchemas().Log, callbacks) as any);
                         stateActions.Email.set(schemaObj.format(configData?.Email || {}, schemaObj.getSchemas().Email, callbacks) as any);

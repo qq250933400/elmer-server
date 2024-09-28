@@ -1,6 +1,6 @@
 {
     "name": "elmer-boot",
-    "version": "2.0.9",
+    "version": "2.0.10",
     "description": "",
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",
@@ -11,7 +11,7 @@
         "start": "ts-node ./app/index.ts",
         "dev": "nodemon ./app/index.ts",
         "test": "jest",
-        "cmd": "ts-node ./src/cmd.ts init"
+        "cmd": "ts-node ./src/cmd.ts -h"
     },
     "author": "",
     "license": "ISC",
