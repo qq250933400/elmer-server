@@ -9,6 +9,7 @@ import {
 } from "../data/constants";
 import { validateModule, getModuleId } from "./module";
 import utils from "../utils/utils";
+import { IAnnotationOption } from "../interface/IAnnotation";
 
 interface IInitParams {
     instanceId: string;
@@ -17,9 +18,10 @@ interface IInitParams {
 
 const instanceData = {};
 
-const getParams = (Target: new(...args: any[]) => any, opt: IInitParams,) => {
-    const paramtypes: any[] = Reflect.getMetadata("design:paramtypes", Target) || [];
+const getParams = (Target: new(...args: any[]) => any, opt: IAnnotationOption) => {
+    const paramtypes: any[] = Reflect.getMetadata("design:paramtypes", Target.prototype.constructor) || [];
     const paramList: any[] = [];
+    console.log("++++GetParam---",  Target.prototype.constructor.parameters);
     paramtypes.forEach((param) => {
         if(validateModule(param)) {
             Reflect.defineMetadata(META_KEY_INSTANCE_ID, opt.instanceId, param);
@@ -34,7 +36,7 @@ const getParams = (Target: new(...args: any[]) => any, opt: IInitParams,) => {
 };
 export const createInstance = <Factory extends new(...args: any[]) => any>(
     Target: Factory,
-    opt: IInitParams,
+    opt: IAnnotationOption,
     ...params: any[]
 ): InstanceType<Factory> => {
     const instanceId = opt.instanceId;
@@ -63,14 +65,7 @@ export const createInstance = <Factory extends new(...args: any[]) => any>(
             if(instanceObj.obj) {
                 return instanceObj.obj;
             } else {
-                const initparams = getParams(Target, {
-                    instanceId
-                });
-                const objParams = [
-                    ...initparams,
-                    ...params
-                ];
-                moduleObj = new Target(...objParams);
+                moduleObj = new Target(opt, ...params);
                 instanceObj.obj = moduleObj;
             }
             break;
@@ -80,23 +75,37 @@ export const createInstance = <Factory extends new(...args: any[]) => any>(
             if(instanceObj.service[mid]) {
                 return instanceObj.service[mid];
             } else {
-                const initparams = getParams(Target, {
-                    instanceId
-                });
-                const objParams = [
-                    ...initparams,
-                    ...params
-                ];
-                moduleObj = new Target(...objParams);
+                moduleObj = new Target(...[opt, ...params]);
                 instanceObj.service[mid] = moduleObj;
             }
             break;
         }
+        case META_VALUE_MODULE_REQUEST: {
+            if(utils.isEmpty(opt.requestId)) {
+                throw new Error("requestId cannot be empty");
+            }
+            if(!instanceObj?.request) {
+                throw new Error(`The request instance not exists.`);
+            }
+            if(!instanceObj.request[opt.requestId]) {
+                instanceObj.request[opt.requestId] = {};
+            }
+            const mid = getModuleId(Target);
+            if(instanceObj.request[opt.requestId][mid]) {
+                return instanceObj.request[opt.requestId][mid];
+            } else {
+                return new Target(...[opt, ...params]);
+            }
+        }
         default: {
-            console.error("undefined: ", Target);
+            if(typeof Target === "function") {
+                moduleObj = new Target(...params);
+            } else {
+                moduleObj = Target;
+            }
         }
     }
-    Reflect.defineMetadata(META_KEY_MODULE_TYPE, moduleType, moduleObj);
+    Reflect.defineMetadata(META_KEY_INSTANCE_ID, instanceId, moduleObj);
     return moduleObj;
 };
 
@@ -106,7 +115,7 @@ export const getModuleObj = <ModuleFactory extends new(...args: any[]) => any>(F
     const mtype = Reflect.getMetadata(META_KEY_MODULE_TYPE, Factory);
     const instanceObj = instanceData[instanceId];
     if(!instanceObj) {
-        return null;
+        return undefined;
     }
     if(mtype === META_VALUE_MODULE_APPSERVICE) {
         return instanceObj.service[mid];

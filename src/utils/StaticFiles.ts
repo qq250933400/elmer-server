@@ -1,5 +1,6 @@
 import "reflect-metadata";
-import { GetConfig, IConfigServer } from "../bak/config";
+import { GetConfig } from "../Config";
+import { IConfigServer } from "../Config/interface/IConfigServer";
 import { AppService } from "../bak/core/Module";
 import { Request } from "express";
 import utils from "./utils";

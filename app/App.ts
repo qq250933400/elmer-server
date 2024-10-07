@@ -1,5 +1,8 @@
 
-import { BootApplication, AppService, Config, GetConfig } from "../src";
+import { BootApplication, AppService, Config, GetConfig, AppModel } from "../src";
+import { Param } from "../src/Annotation/module";
+
+import "./router";
 
 @AppService
 class TestService {
@@ -10,16 +13,18 @@ class TestService {
 
 @Config("./config.yml")
 @Config("./email.yml")
+@AppModel(TestService)
 @BootApplication
 export class App {
     @GetConfig("Server", "port")
-    private config: any;
+    private config: number;
     constructor(
-        private testService: TestService
+        private  testService: TestService
     ) {
-        console.log("-----Init--App-", this.testService);
+        // console.log("-----Init--App-", this.testService, this.config);
     }
     private main() {
+        console.log("Run main: ", this.config);
         console.log(this.testService.say(), this.config);
     }
 }

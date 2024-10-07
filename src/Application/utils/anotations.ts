@@ -3,8 +3,8 @@ import {
 } from "../../data/constants";
 import { Adapter } from "../Core/Adapter";
 import { defineModule, validateModuleEx } from "../../Annotation/module";
-export const BootApplication = (Target: new(...args: any[]) => any) => {
-    defineModule(Target, META_VALUE_BOOT_APPLICATION, {
+export const BootApplication = (Target: new(...args: any[]) => any, context: ClassDecoratorContext<any>) => {
+    defineModule(Target, META_VALUE_BOOT_APPLICATION, context, {
         errmsg: "The boot application can not use with other class decorator"
     });
 };

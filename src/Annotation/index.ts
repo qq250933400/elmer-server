@@ -1,1 +1,1 @@
-export { AppService } from "./module";
+export { AppService, AppModel } from "./module";

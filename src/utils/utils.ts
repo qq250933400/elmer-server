@@ -80,7 +80,7 @@ const getRandomText = (len: number = 8):string => {
 }
 
 /** Http */
-const toUri = <T={}>(queryStr: string):T => {
+const toUri = <T={}>(queryStr: string):T|undefined => {
     if(!isEmpty(queryStr)) {
         if(isString(queryStr)) {
             let textQuery = queryStr.replace(/^\?/, "").replace(/^\s*/, "").replace(/\#[\s\S]*$/, "");
@@ -103,9 +103,9 @@ const toUri = <T={}>(queryStr: string):T => {
     }
 }
 
-const toQuery = (obj: any): string => {
+const toQuery = (obj: any): string|undefined => {
     if(obj) {
-        const objArr = [];
+        const objArr: string[] = [];
         Object.keys(obj).map((attrKey) => {
             const attrValue = obj[attrKey];
             const attrStr = attrValue ? (
@@ -250,7 +250,7 @@ const fildMD5Async = (fileName: string): string|null|undefined => {
 }
 const invoke = function(fn: Function, owner?: any, ...args: any[]): Promise<any> {
     return new Promise((resolve, reject) => {
-        const fResult = fn.apply(owner || this, args);
+        const fResult = fn.apply(owner, args);
         if(isPromise(fResult)) {
             fResult.then(resolve).catch(reject);
         } else {
@@ -263,11 +263,11 @@ const invokeEx = <T extends Object>(obj: T, method: keyof T, ...params: any[]): 
         obj[method].bind(obj);
         return invoke(obj[method], obj, ...params);
     } else {
-        Promise.reject("The method " + method.toString() + " is not a function");
+        return Promise.reject("The method " + method.toString() + " is not a function");
     }
 };
 const getCommand = function (command: string[], cmdKey: string) {
-    let result: string;
+    let result: string|undefined = undefined;
     let findKey = false;
     let findValue = false;
     const keyReg = /^[\-]{1,}/;
@@ -279,7 +279,7 @@ const getCommand = function (command: string[], cmdKey: string) {
             if (isCmdKey) {
                 if (cmd === cmdKey) {
                     if (!keyReg.test(command[i + 1])) {
-                        result = command[i + 1] === undefined ? null : command[i + 1];
+                        result = command[i + 1];
                         findValue = i + 1 < command.length;
                         break;
                     }

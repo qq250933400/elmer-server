@@ -1,12 +1,18 @@
-import { AppService } from "../../Annotation/index";
+import { AppService, AppModel } from "../../Annotation/index";
 import { META_KEY_CONFIG_INFO } from "../../data/constants";
 import { parse } from "yaml";
 import { IConfigApplication } from "../../Config/interface";
+import { Param } from "../../Annotation/module";
 
 import fs from "fs";
 import lodash from "lodash";
 import { Adapter } from "./Adapter";
 import { Log } from "./Log";
+import {
+    META_KEY_MODULE_ID,
+    META_KEY_INSTANCE_ID
+} from "../../data/constants";
+import { v7 as uuid } from "uuid";
 
 interface IConfigInfo {
     id: string;
@@ -16,16 +22,21 @@ interface IConfigInfo {
     }
 }
 
+@AppModel(Log)
 @AppService
 export class Application {
-    public configuration: IConfigApplication;
-
-    constructor(private log: Log) {}
+    public configuration: IConfigApplication = {} as any;
+    constructor(private log: Log) {
+        
+    }
     init(bootApp: any) {
         this.loadConfig(bootApp);
     }
     start(adapter: Adapter) {
         try {
+            const adapterId = uuid();console.log("=======ApplicationId----", Reflect.getMetadata(META_KEY_INSTANCE_ID, this));
+            Reflect.defineMetadata(META_KEY_MODULE_ID, adapterId, adapter);
+            Reflect.defineMetadata(META_KEY_INSTANCE_ID, Reflect.getMetadata(META_KEY_INSTANCE_ID, this), adapter);
             adapter.on("ready", (url: string) => {
                 console.log(`Application is running at ${url}`);
                 this.log.info(`Application is running at ${url}`);
@@ -35,8 +46,9 @@ export class Application {
                 this.log.error(err.message, err.stack);
             });
             adapter.init(this.configuration);
+            adapter.loadRouter();
             adapter.listen();
-        } catch(e) {
+        } catch(e: any) {
             console.error(e);
             this.log.error(e.message, e.stack);
         }

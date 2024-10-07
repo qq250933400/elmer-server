@@ -1,8 +1,8 @@
 {
     "compilerOptions": {
         "allowSyntheticDefaultImports": true,
-        "experimentalDecorators": true,
-        "emitDecoratorMetadata": true,
+        "experimentalDecorators": false,
+        "emitDecoratorMetadata": false,
         "noFallthroughCasesInSwitch": true,
         "noImplicitAny": false,
         "sourceMap": true,
@@ -29,6 +29,7 @@
         ]
     },
     "include": [
-        "./src/**/*"
+        "./src/**/*",
+        "./app/**/*"
     ]
 }

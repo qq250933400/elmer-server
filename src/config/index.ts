@@ -22,7 +22,7 @@ import lodash from "lodash";
 export const Config = (fileName: string) => (Target: new(...args: any[]) => any) => {
     const env = utils.getCommand(process.argv, COMMAND_KEY_APP_ENV);
     const configPath = utils.getCommand(process.argv, COMMAND_KEY_CONFIG_PATH) || "./";
-    const rootPath = process.env["INIT_CWD"];
+    const rootPath = process.env["INIT_CWD"] as any;
     const baseConfigFileName = path.resolve(rootPath,configPath, fileName);
     const configData = {
         base: baseConfigFileName,
@@ -38,7 +38,7 @@ export const Config = (fileName: string) => (Target: new(...args: any[]) => any)
         const fileType = utils.getFileType(fileName);
         const envConfigFileName = path.resolve(rootPath,configPath, `./${name}-${env}.${fileType}`);
         if(fs.existsSync(envConfigFileName)) {
-            configData.env = envConfigFileName;
+            configData.env = envConfigFileName as any;
         }
     }
     saveConfigInfo.push({
@@ -53,17 +53,40 @@ export const Config = (fileName: string) => (Target: new(...args: any[]) => any)
  * @param id - 配置Category 下的id
  * @returns 
  */
-export const GetConfig = <ConfigKey extends keyof IConfigApplication>(key?: ConfigKey, id?: keyof IConfigApplication[ConfigKey]) => (target: Object, propertyKey: string) => {
-    Object.defineProperty(target, propertyKey, {
-        get: () => {
-            const instanceId = Reflect.getMetadata(META_KEY_INSTANCE_ID, target.constructor);
-            const applicationObj = getModuleObj(Application, instanceId);
-            const configData = lodash.get(applicationObj.configuration || {}, key);
-            if(lodash.isEmpty(key)) {
-                return applicationObj.configuration || {};
-            } else {
-                return !lodash.isEmpty(id) ? lodash.get(configData, id) : configData;
-            }
+export const GetConfig = <ConfigKey extends keyof IConfigApplication>(
+    key?: ConfigKey,
+    id?: keyof IConfigApplication[ConfigKey]
+) => (value: any, context: ClassFieldDecoratorContext<any, any>): any => {
+    return function(this: any) {
+        if(context.kind === "field") {
+            const getConfigData = function(this: any) {
+                const instanceId = Reflect.getMetadata(META_KEY_INSTANCE_ID, this);
+                const applicationObj = getModuleObj(Application, instanceId);
+                let overrideConfigData: any = null;
+                if(applicationObj) {
+                    const configData: any = applicationObj.configuration || {};
+                    if(!key || lodash.isEmpty(key)) {
+                        overrideConfigData = configData;
+                    } else {
+                        if(!lodash.isEmpty(key)) {
+                            overrideConfigData = lodash.get(configData, key);
+                        } else {
+                            overrideConfigData = configData;
+                        }
+                        overrideConfigData = id && !lodash.isEmpty(id) ? lodash.get(overrideConfigData, id) : overrideConfigData;
+                    }
+                    return overrideConfigData;
+                } else {
+                    console.error("Application instance is not found.", this);
+                }
+            };
+            delete this[context.name];
+            Object.defineProperty(this, context.name, {
+                get: () => getConfigData.call(this),
+                set: () => {}
+            });
+        } else {
+            throw new Error("the @GetConfig can only use on class attribute.");
         }
-    });
+    }
 };
