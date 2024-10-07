@@ -12,6 +12,7 @@ export const META_VALUE_MODULE_INJECT = "MODULE_INJECT";
 
 //全局固定属性Key
 export const GLOBAL_KEY_CONTROLLER_BASE_PATH = Symbol("CONTROLLER_BASE_PATH");
+export const GLOBAL_KEY_SESSION_ID_KEY = 'ESSID';
 
 //命令行参数
 export const COMMAND_KEY_APP_ENV = "APP_ENV";

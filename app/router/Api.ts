@@ -1,4 +1,5 @@
-import { Controller, RequestMapping, GetConfig, GetParam } from "../../src";
+import { Controller, RequestMapping, GetConfig, GetParam, Exception, Get } from "../../src";
+import { utils } from "../../src";
 import { Response } from "express";
 
 type TypeRequestBody = {
@@ -13,17 +14,29 @@ export class Api {
         // private email: Email
     ) {}
 
-    @RequestMapping("/guid", "GET")
+    @Get("/guid")
     guid(response: Response) {
         // response.status(400);
-        console.log("---UpdateRouterStatus--", 400);
-          
-        // return {
-        //     uuid: utils.guid()
-        // };
+        return new Promise((resolve, reject) => {
+            setTimeout(() => {
+                resolve({
+                    uuid: utils.default.uuid()
+                });
+            }, 1000);
+        });
     }
+    @GetParam([
+        { type: "Body", args: "orderNo" },
+        { type: "QueryParam", args: "orderNo"},
+        { type: "Header", args: "Accept-Language"},
+        { type: "Cookie", args: "AuthId" }
+    ])
     @RequestMapping("/encode", "POST")
-    encode(body: TypeRequestBody) {
+    encode(body: TypeRequestBody, queryParams: any, lang: string, AuthId: string) {
+        console.log("requestBody: ",body);
+        console.log("requesyQuery: ", queryParams);
+        console.log("accept-language", lang);
+        console.log("AuthId: ", AuthId);
         // return utils.aseEncode(body.text, this.config.publicKey);
     }
 

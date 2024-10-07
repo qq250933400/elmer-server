@@ -1,7 +1,8 @@
 export interface IConfigSession {
     savePath: string;
-    timeout: number;
+    maxAge: number;
     encode?: boolean;
     publicKey?: string;
     enabled?: boolean;
+    sessionIdKey?: 'SSID'
 }

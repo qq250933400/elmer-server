@@ -23,9 +23,11 @@ export const Config = (fileName: string) => (Target: new(...args: any[]) => any)
     const env = utils.getCommand(process.argv, COMMAND_KEY_APP_ENV);
     const configPath = utils.getCommand(process.argv, COMMAND_KEY_CONFIG_PATH) || "./";
     const rootPath = process.env["INIT_CWD"] as any;
-    const baseConfigFileName = path.resolve(rootPath,configPath, fileName);
+    const cwdConfigPath = path.resolve(rootPath, configPath);
+    const baseConfigFileName = path.resolve(cwdConfigPath, fileName);
     const configData = {
         base: baseConfigFileName,
+        rootPath: cwdConfigPath,
         env: null
     };
     const saveConfigInfo: any[] = Reflect.getMetadata(META_KEY_CONFIG_INFO, Target) || [];

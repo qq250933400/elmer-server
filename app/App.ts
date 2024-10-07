@@ -7,7 +7,7 @@ import "./router";
 @AppService
 class TestService {
     say() {
-        console.log("hello world");
+        console.log("app say: hello world");
     }
 }
 
@@ -23,9 +23,9 @@ export class App {
     ) {
         // console.log("-----Init--App-", this.testService, this.config);
     }
-    private main() {
-        console.log("Run main: ", this.config);
-        console.log(this.testService.say(), this.config);
+    main() {
+        this.testService.say();
+        console.log('boot application', this.config);
     }
 }
 

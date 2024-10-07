@@ -14,5 +14,4 @@ export const HttpAdapter = <T extends Adapter> (Adapter: T) => ( BootApplication
         throw new Error("The HttpAdapter can only use with boot Application");
     }
     (BootApplication as any).adapter = Adapter;
-    console.log("---defineAdaptuer---");
 }

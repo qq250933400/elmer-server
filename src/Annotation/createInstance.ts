@@ -18,22 +18,6 @@ interface IInitParams {
 
 const instanceData = {};
 
-const getParams = (Target: new(...args: any[]) => any, opt: IAnnotationOption) => {
-    const paramtypes: any[] = Reflect.getMetadata("design:paramtypes", Target.prototype.constructor) || [];
-    const paramList: any[] = [];
-    console.log("++++GetParam---",  Target.prototype.constructor.parameters);
-    paramtypes.forEach((param) => {
-        if(validateModule(param)) {
-            Reflect.defineMetadata(META_KEY_INSTANCE_ID, opt.instanceId, param);
-            Reflect.defineMetadata(META_KEY_REQUEST_ID, opt.requestId, param);
-            const obj = createInstance(param, opt);
-            paramList.push(obj);
-        } else {
-            paramList.push(param);
-        }
-    });
-    return paramList;
-};
 export const createInstance = <Factory extends new(...args: any[]) => any>(
     Target: Factory,
     opt: IAnnotationOption,
@@ -121,5 +105,20 @@ export const getModuleObj = <ModuleFactory extends new(...args: any[]) => any>(F
         return instanceObj.service[mid];
     } else if(mtype === META_VALUE_MODULE_REQUEST) {
         console.error("todo: not implements");
+    }
+};
+
+export const releaseRequest = (instanceId: string, requestId: string) => {
+    const instanceObj = instanceData[instanceId];
+    if(instanceObj.request) {
+        const reqObjs = instanceObj.request[requestId];
+        if(reqObjs) {
+            Object.keys(reqObjs).forEach((objId: string)=>{
+                const obj = reqObjs[objId];
+                typeof obj.destory === "function" && obj.destory();
+                delete reqObjs[objId];
+            });
+            delete instanceObj.request[requestId];
+        }
     }
 };

@@ -1,7 +1,8 @@
-import { getApplicationConfig } from "../bak/config";
 import * as crypto from "crypto";
 import * as fs from 'fs';
 import { md5 } from "./md5";
+import { v7 as uuid } from "uuid";
+import type { V7Options } from "uuid";
 
 const getType = (val: any): string => Object.prototype.toString.call(val);
 /**
@@ -339,6 +340,8 @@ const getFileNameEx = (fileName: string): string => {
     return name.replace(/\.[a-z0-9_]{1,}$/i, "");
 };
 
+const uuidFn = (opt?: V7Options) => uuid(opt);
+
 export default {
     aseEncode,
     aseDecode,
@@ -368,5 +371,6 @@ export default {
     setValue,
     md5,
     invoke,
-    invokeEx
+    invokeEx,
+    uuid: uuidFn
 };

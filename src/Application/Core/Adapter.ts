@@ -1,6 +1,7 @@
 import { IConfigApplication } from "../../Config/interface";
 import { Observe } from "elmer-common/lib/";
 import { IDefineRequestParam } from "../Request/Annotation";
+import { Log } from "./Log";
 
 interface IAdapterEvent {
     error: (err: any) => void;
@@ -11,8 +12,8 @@ interface IAdapterEvent {
 export abstract class Adapter {
     public readonly configuration: IConfigApplication = {} as any;
 
-    abstract listen(): void;
-    abstract loadRouter(): void;
+    abstract listen(log: Log): void;
+    abstract loadRouter(log: Log): void;
     abstract get(url: string, handler: Function): void;
     abstract post(url: string, handler: Function): void;
     abstract put(url: string, handler: Function): void;

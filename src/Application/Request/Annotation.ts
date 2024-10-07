@@ -1,6 +1,6 @@
 import { Adapter } from "../Core/Adapter";
 import { META_KEY_MODULE_ID, META_KEY_INSTANCE_ID } from "../../data/constants";
-import { createInstance } from "../../Annotation/createInstance";
+import { createInstance, releaseRequest } from "../../Annotation/createInstance";
 import { v7 as uuid } from "uuid";
 import utils from "../../utils/utils";
 
@@ -26,7 +26,7 @@ export interface IDefineRoute extends IDefineRequest {
 }
 
 export interface IDefineRequestParam {
-    type: 'Body'|'PathParam'|'QueryParam',
+    type: 'Body'|'PathParam'|'QueryParam'|'Header'|'Cookie'|'Request'|'Response',
     args?: any[]| string;
 }
 
@@ -45,7 +45,7 @@ export const GetParam = (opt: IDefineRequestParam[]) => (value: Function, contex
     return function(...args: any[]) {
         const adapter: Adapter = args[0];
         const reset = args.filter((value, index) => index > 0);
-        const params = adapter.getParam(opt, ...reset);console.log("----Params---", params);
+        const params = adapter.getParam(opt, ...reset);
         return value(...params);
     }
 };
@@ -67,10 +67,16 @@ export const RequestMapping = (pathname: string, method?: keyof typeof RequestMe
     return requestCallback;
 };
 
-export const createRequestRoutes = (adapter: Adapter, useParamsHandle: Function, responseHandle: Function) => {
+export const Get = (pathname: string) => RequestMapping(pathname, "GET");
+export const Post = (pathname: string) => RequestMapping(pathname, "POST");
+export const Delete = (pathname: string) => RequestMapping(pathname, "DELETE");
+export const Put = (pathname: string) => RequestMapping(pathname, "PUT");
+export const Options = (pathname: string) => RequestMapping(pathname, "OPTIONS");
+
+export const createRequestRoutes = (adapter: Adapter, beforeHandler: Function, responseHandle: Function) => {
     // requestMapping.forEach(callback => callback());
     const routes: IDefineRoute[] = requestDataStore.requests || [];
-    const routeHandler = (route: IDefineRoute, ...args: any[]) => {
+    const routeHandler = (route: IDefineRoute, beforeHandler: Function, ...args: any[]) => {
         // Reflect.defineMetadata(META_KEY_MODULE_ID, adapter);
         const instanceId = Reflect.getMetadata(META_KEY_INSTANCE_ID, adapter);
         const requestId = uuid();
@@ -78,9 +84,22 @@ export const createRequestRoutes = (adapter: Adapter, useParamsHandle: Function,
             instanceId: instanceId,
             requestId: requestId
         });
-        return utils.invokeEx(constroller, route.callbackName, adapter, route, ...args);
+        return new Promise((resolve, reject)=> {
+            beforeHandler(...args);
+            utils.invokeEx(constroller, route.callbackName, adapter, route, ...args)
+                .then((resp) => {
+                    resolve(resp);
+                    releaseRequest(instanceId, requestId);
+                }).catch((err) => {
+                    reject(err);
+                    releaseRequest(instanceId, requestId);
+                });
+        })
     };
     const spaceLength = 10;
+    const beforeSpace = 4;
+    const routeLogs: string[] = [];
+    const beforeSpaceStr = " ".repeat(beforeSpace);
     routes.forEach((routeData) => {
         ((route) => {
             const url = ((route.baseName ?? "") + route.url).replace(/\/{1,}/g, "/");
@@ -89,35 +108,35 @@ export const createRequestRoutes = (adapter: Adapter, useParamsHandle: Function,
             switch(route.method) {
                 case "GET": {
                     adapter.get(url, (...args: any[]) => {
-                        const response = routeHandler(routeConfig, ...args);
+                        const response = routeHandler(routeConfig, beforeHandler, ...args);
                         return responseHandle(response, ...args);
                     });
                     break;
                 }
                 case "POST": {
                     adapter.post(url, (...args: any[]) => {
-                        const response = routeHandler(routeConfig, ...args);
+                        const response = routeHandler(routeConfig, beforeHandler, ...args);
                         return responseHandle(response, ...args);
                     });
                     break;
                 }
                 case "OPTIONS": {
                     adapter.post(url, (...args: any[]) => {
-                        const response = routeHandler(routeConfig, ...args);
+                        const response = routeHandler(routeConfig, beforeHandler, ...args);
                         return responseHandle(response, ...args);
                     });
                     break;
                 }
                 case "DELETE": {
                     adapter.delete(url, (...args: any[]) => {
-                        const response = routeHandler(routeConfig, ...args);
+                        const response = routeHandler(routeConfig, beforeHandler, ...args);
                         return responseHandle(response, ...args);
                     });
                     break;
                 }
                 case "PUT": {
                     adapter.put(url, (...args: any[]) => {
-                        const response = routeHandler(routeConfig, ...args);
+                        const response = routeHandler(routeConfig, beforeHandler, ...args);
                         return responseHandle(response, ...args);
                     });
                     break;
@@ -126,9 +145,11 @@ export const createRequestRoutes = (adapter: Adapter, useParamsHandle: Function,
                     throw new Error("Method not support");
                 }
             }
-            console.log(log);
+            //console.log(log); // 打印路径信息
+            routeLogs.push(`${beforeSpaceStr} ${log}`);
         })(routeData);
     });
+    return routeLogs;
 }
 
 export const defineRoute = (baseName: string, Target: new(...args: any[]) => any) => {

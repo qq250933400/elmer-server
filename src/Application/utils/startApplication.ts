@@ -29,5 +29,4 @@ export const startApplication = (Factory: new(...args: any[]) => void) => {
     appInstance.init(app); // 准备应用
     utils.invokeEx(app as any, "main", adapter.app); // 执行main方法，在运行前可自定义操作
     appInstance.start(adapter); // 运行服务监听
-    console.log("---", app);
 }

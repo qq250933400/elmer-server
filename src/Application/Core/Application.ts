@@ -18,7 +18,8 @@ interface IConfigInfo {
     id: string;
     data: {
         base: string,
-        env: string
+        env: string,
+        rootPath: string;
     }
 }
 
@@ -34,7 +35,7 @@ export class Application {
     }
     start(adapter: Adapter) {
         try {
-            const adapterId = uuid();console.log("=======ApplicationId----", Reflect.getMetadata(META_KEY_INSTANCE_ID, this));
+            const adapterId = uuid();
             Reflect.defineMetadata(META_KEY_MODULE_ID, adapterId, adapter);
             Reflect.defineMetadata(META_KEY_INSTANCE_ID, Reflect.getMetadata(META_KEY_INSTANCE_ID, this), adapter);
             adapter.on("ready", (url: string) => {
@@ -46,8 +47,8 @@ export class Application {
                 this.log.error(err.message, err.stack);
             });
             adapter.init(this.configuration);
-            adapter.loadRouter();
-            adapter.listen();
+            adapter.loadRouter(this.log);
+            adapter.listen(this.log);
         } catch(e: any) {
             console.error(e);
             this.log.error(e.message, e.stack);
@@ -57,10 +58,12 @@ export class Application {
         const configInfoData: IConfigInfo[] = Reflect.getMetadata(META_KEY_CONFIG_INFO, bootApp.constructor) || [];
         const configData: any = {};
         configInfoData.forEach(configInfo => {
-            const { data: { base, env } } = configInfo;
+            const { data: { base, env, rootPath }  } = configInfo;
             const baseConfig = this.readConfigData(base);
             const envConfig = this.readConfigData(env);
-            lodash.merge(configData, baseConfig, envConfig || {});
+            lodash.merge(configData, baseConfig, envConfig || {}, {
+                rootPath
+            });
         });
         this.configuration = configData;
     }
