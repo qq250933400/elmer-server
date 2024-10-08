@@ -73,10 +73,6 @@ export const getModuleId = (Target: new(...args: any[]) => any) => {
     return Reflect.getMetadata(META_KEY_MODULE_ID, Target);
 };
 
-export const Param = (target: Object, propertyName: string, parameterIndex: number) => {
-    console.log("target", target, parameterIndex);
-};
-
 export const AppService = <IFactory extends new(...args: any[]) => any>(Factory: IFactory, context: ClassDecoratorContext<any>) => {
     if(context.kind === "class") {
         return defineModule<IFactory>(Factory, META_VALUE_MODULE_APPSERVICE, context);

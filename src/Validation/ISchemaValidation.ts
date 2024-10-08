@@ -4,6 +4,9 @@ export declare interface ISchemaValidateTypeData {
 export declare interface ISchemaValidateType {
     String: {
         value: string;
+        length?: number;
+        minLength?: number;
+        maxLength?: number;
     };
     Number: {
         value: number;
@@ -15,9 +18,11 @@ export declare interface ISchemaValidateType {
     };
     Object: {
         value: Object;
+        properties: ISchemaConfig<any, any, any>;
     };
     Array: {
         value: Array<any>;
+        itemType: ISchemaValidateType;
     };
     Date: {
         value: Date;
@@ -45,7 +50,14 @@ export declare type ISchemaAttribute<IFormatCallback,DataType extends keyof ISch
 } & Omit<ISchemaValidateType[DataType], "value">;
 
 
-let a: ISchemaAttribute<{}, keyof ISchemaValidateType> = {
-    type: "Number",
-    
+export type ISchemaConfig<T, FormatCallback, OptionalFields> = {
+    [P in keyof T]?: ISchemaAttribute<FormatCallback, keyof ISchemaValidateType> & {
+        properties?: ISchemaConfig<T[P], FormatCallback, OptionalFields>
+    } & Partial<OptionalFields>;
+};
+
+export declare interface ISchemaValidateResult {
+    positive: boolean;
+    message?: string;
+    negative?: {key: string, message: string}[];
 }

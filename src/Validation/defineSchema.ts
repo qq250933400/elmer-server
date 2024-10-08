@@ -1,10 +1,4 @@
-import { ISchemaAttribute, ISchemaValidateType } from "./ISchemaValidation";
-
-type ISchemaConfig<T, FormatCallback, OptionalFields> = {
-    [P in keyof T]: ISchemaAttribute<FormatCallback, keyof ISchemaValidateType> & {
-        properties?: ISchemaConfig<T[P], FormatCallback, OptionalFields>
-    } & Partial<OptionalFields>;
-};
+import { ISchemaConfig } from "./ISchemaValidation";
 
 export const defineSchema = <OptionalFields={}, FormatCallback={}, SchemaData={}>(
     config: ISchemaConfig<SchemaData, FormatCallback, OptionalFields>,
@@ -18,3 +12,4 @@ export const defineSchema = <OptionalFields={}, FormatCallback={}, SchemaData={}
 export const defineFormat = <T={}>(config: { [ P in keyof T ]: (value: any, data: any) => any }):T =>  {
     return {} as T;
 }
+

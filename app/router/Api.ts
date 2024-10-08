@@ -1,10 +1,41 @@
-import { Controller, RequestMapping, GetConfig, GetParam, Exception, Get } from "../../src";
+import { Controller, RequestMapping, GetConfig, GetParam, Exception, Get, Validation, RBValidate } from "../../src";
 import { utils } from "../../src";
 import { Response } from "express";
 
 type TypeRequestBody = {
     text: string;
+    orderNo: string;
+    orderId: number;
+    details: {
+        count: number;
+    }
 };
+
+const orderSchema = Validation.defineSchema<{ length: number, minLength: number }, {}, TypeRequestBody>({
+    orderNo: {
+        type: "String",
+        length: 14,
+        "required": true
+    },
+    orderId: {
+        type: "Number",
+        required: true
+    },
+    text: {
+        type: "String",
+        minLength: 10
+    },
+    details: {
+        type: "Object",
+        required: true,
+        properties: {
+            count: {
+                type: "Number",
+                required: true
+            }
+        }
+    }
+})
 
 @Controller("/api")
 export class Api {
@@ -25,6 +56,7 @@ export class Api {
             }, 1000);
         });
     }
+    @RBValidate(orderSchema.data, orderSchema.format)
     @GetParam([
         { type: "Body", args: "orderNo" },
         { type: "QueryParam", args: "orderNo"},
@@ -38,6 +70,9 @@ export class Api {
         console.log("accept-language", lang);
         console.log("AuthId: ", AuthId);
         // return utils.aseEncode(body.text, this.config.publicKey);
+        return {
+            value: "hello world"
+        }
     }
 
     @RequestMapping("/email", "GET")

@@ -76,10 +76,12 @@ export const createInstance = <Factory extends new(...args: any[]) => any>(
             }
             const mid = getModuleId(Target);
             if(instanceObj.request[opt.requestId][mid]) {
-                return instanceObj.request[opt.requestId][mid];
+                moduleObj = instanceObj.request[opt.requestId][mid];
             } else {
-                return new Target(...[opt, ...params]);
+                moduleObj = new Target(...[opt, ...params]);
             }
+            Reflect.defineMetadata(META_KEY_REQUEST_ID, opt.requestId, moduleObj);
+            break;
         }
         default: {
             if(typeof Target === "function") {
@@ -121,4 +123,8 @@ export const releaseRequest = (instanceId: string, requestId: string) => {
             delete instanceObj.request[requestId];
         }
     }
+};
+
+export const getInstanceId = (targetObj: Object) => {
+    return Reflect.getMetadata(META_KEY_INSTANCE_ID, targetObj);
 };

@@ -1,6 +1,10 @@
 import { Adapter } from "../Core/Adapter";
 import { META_KEY_MODULE_ID, META_KEY_INSTANCE_ID } from "../../data/constants";
-import { createInstance, releaseRequest } from "../../Annotation/createInstance";
+import { createInstance, releaseRequest, getInstanceId } from "../../Annotation/createInstance";
+import { Schema } from "../../Validation/Schema";
+import { Exception } from "../Core/Exception";
+
+import type { ISchemaConfig } from "../../Validation/ISchemaValidation";
 import { v7 as uuid } from "uuid";
 import utils from "../../utils/utils";
 
@@ -159,4 +163,24 @@ export const defineRoute = (baseName: string, Target: new(...args: any[]) => any
         Target
     }));
     requestDataStore.requests.push(...reqList);
+};
+
+export const RBValidate = <Data, FormatCallback extends Record<string, Function>, OptionalField>(schema: ISchemaConfig<Data, FormatCallback, OptionalField>, format?: FormatCallback) => (value: Function, context: ClassMethodDecoratorContext<any, any>) => {
+    if(context.kind !== "method" ) {
+        throw new Error("The RBValidate can not use with other class decorator");
+    }
+    return function(...args: any[]) {
+        const adapter: Adapter = args[0];
+        const reset = args.filter((_, index) => index > 0);
+        const requestBody = adapter.getParam([{ type: "Body" }], ...reset)[0];
+        const instanceId = getInstanceId(this);
+        const schemaObj = createInstance(Schema, {
+            instanceId
+        });
+        const validationResult = schemaObj.validate(requestBody, schema, format);
+        if(!validationResult.positive) {
+            throw new Exception(500,`The request body is not match the validation schema.`, "vd-Failed", validationResult.negative);
+        }
+        return value(...args);
+    }
 };

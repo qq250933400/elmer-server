@@ -2,7 +2,6 @@ import { AppService, AppModel } from "../../Annotation/index";
 import { META_KEY_CONFIG_INFO } from "../../data/constants";
 import { parse } from "yaml";
 import { IConfigApplication } from "../../Config/interface";
-import { Param } from "../../Annotation/module";
 
 import fs from "fs";
 import lodash from "lodash";

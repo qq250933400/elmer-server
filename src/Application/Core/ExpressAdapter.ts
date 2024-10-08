@@ -128,9 +128,17 @@ export class ExpressAdapter extends Adapter {
             responseData.then((data) => {
                 res.send(data);
             }).catch((error) => {
-                console.error(error);
+                log.error(error.stack);
                 res.status(error.code || 500);
-                res.send(error.data || error.message);
+                if(error.data) {
+                    res.send({
+                        statusCode: error.statusCode || "Unknown",
+                        message: error.message,
+                        stack: error.data
+                    })
+                } else {
+                    res.send({ statusCode: error.statusCode || "Unknown", message: error.message});
+                }
             });
         });
         routeLogs[0] = routeLogs[0].substring(1); // 为兼容Log4j打印多参数自动加1一个空格问题

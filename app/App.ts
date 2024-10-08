@@ -1,6 +1,5 @@
 
 import { BootApplication, AppService, Config, GetConfig, AppModel } from "../src";
-import { Param } from "../src/Annotation/module";
 
 import "./router";
 
