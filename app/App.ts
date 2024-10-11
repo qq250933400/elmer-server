@@ -1,5 +1,5 @@
 
-import { BootApplication, AppService, Config, GetConfig, AppModel } from "../src";
+import { BootApplication, AppService, Config, GetConfig, AppModel } from "../src/index";
 
 import "./router";
 
@@ -12,11 +12,12 @@ class TestService {
 
 @Config("./config.yml")
 @Config("./email.yml")
+@Config("./corssSite.json")
 @AppModel(TestService)
 @BootApplication
 export class App {
     @GetConfig("Server", "port")
-    private config: number;
+    private config!: number;
     constructor(
         private  testService: TestService
     ) {

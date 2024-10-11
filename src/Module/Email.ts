@@ -1,14 +1,13 @@
-import { utils } from "elmer-common";
-import { Logger } from "log4js";
+import { AppRequest, AppModel } from "../Annotation";
+import { Log } from "../Application/Core/Log";
+import { GetConfig } from "../Config";
 import { createTransport, Transporter } from "nodemailer";
+import { IConfigEmail } from "../Config/interface/IConfigEmail";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
-import * as smtpTransport from "nodemailer-smtp-transport";
-import { GetConfig, IConfigEmail } from "../config";
-import { GetLogger } from "../logs";
-import { AppService } from "../core/Module";
+import smtpTransport from "nodemailer-smtp-transport";
+import utils from "../utils/utils";
 
-
-type TypeSendEmailOption = {
+interface ISendEmailOption {
     toUsers: string[];
     ccUsers?: string[];
     subject?: string;
@@ -66,29 +65,13 @@ const errorStatus = {
     "554 IP in blacklist": "该IP不在网易允许的发送地址列表里。"
 };
 
-@AppService
+@AppModel([Log])
+@AppRequest
 export class Email {
     @GetConfig("Email")
     private config: IConfigEmail;
-
-    @GetLogger
-    private logger: Logger;
-
-    send(option: TypeSendEmailOption):Promise<any> {
-        const mailOption: any = {
-            from: this.config.user,
-            to: option.toUsers.join(","),
-            subject: option.subject || ""
-        };
-        if(!utils.isEmpty(option.text)) {
-            mailOption.text = option.text;
-        }
-        if(!utils.isEmpty(option.html)) {
-            mailOption.html = option.html;
-        }
-        if(!utils.isEmpty(option.ccUsers) && option.ccUsers.length > 0) {
-            mailOption.cc = option.ccUsers.join(",");
-        }
+    constructor(private logger: Log) {}
+    send(mailOption: ISendEmailOption) {
         return new Promise((resolve,reject) => {
             const reporter = this.createTransport();
             reporter.sendMail(mailOption, (err) => {
@@ -109,7 +92,7 @@ export class Email {
                         failedCode: errCode
                     });
                 } else {
-                    this.logger.info(`Email send success: ${mailOption.to}.`)
+                    this.logger.info(`Email send success: ${mailOption.toUsers?.join(",")}.`)
                     resolve({
                         statusCode: 200,
                         message: "发送成功"

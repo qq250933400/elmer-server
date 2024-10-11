@@ -18,3 +18,9 @@ export const GLOBAL_KEY_SESSION_ID_KEY = 'ESSID';
 export const COMMAND_KEY_APP_ENV = "APP_ENV";
 export const COMMAND_KEY_CONFIG_PATH = "configPath";
 
+//保留常用变量
+export const PROTECT_APPLICATION_MODULE_ID = "Application";
+
+export const PROTECT_MODULE_IDS = [
+    PROTECT_APPLICATION_MODULE_ID
+];

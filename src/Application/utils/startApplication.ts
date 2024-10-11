@@ -3,11 +3,15 @@ import {
     META_KEY_INSTANCE_ID,
     META_VALUE_BOOT_APPLICATION
 } from "../../data/constants";
+import { GetConfig } from "../../Config";
+
+console.log("----startApplication-config", GetConfig);
 import { v7 as uuid } from "uuid";
 import { createInstance } from "../../Annotation/createInstance";
 import { ExpressAdapter } from "../Core/ExpressAdapter";
 import { Application } from "../Core/Application";
 import utils from "../../utils/utils";
+
 
 export const startApplication = (Factory: new(...args: any[]) => void) => {
     const moduleType = Reflect.getMetadata(META_KEY_MODULE_TYPE, Factory);

@@ -24,6 +24,12 @@ interface IDefineRequest {
     callback: Function;
     callbackName: string;
 }
+
+interface IRequestDataStore {
+    tempRequest: any[];
+    requests: any[];
+}
+
 export interface IDefineRoute extends IDefineRequest {
     baseName: string;
     Target: new(...args: any[]) => any;
@@ -34,7 +40,7 @@ export interface IDefineRequestParam {
     args?: any[]| string;
 }
 
-const requestDataStore = {
+const requestDataStore: IRequestDataStore = {
     tempRequest: [],
     requests: []
 };
@@ -173,7 +179,7 @@ export const RBValidate = <Data, FormatCallback extends Record<string, Function>
         const adapter: Adapter = args[0];
         const reset = args.filter((_, index) => index > 0);
         const requestBody = adapter.getParam([{ type: "Body" }], ...reset)[0];
-        const instanceId = getInstanceId(this);
+        const instanceId = getInstanceId(this as any);
         const schemaObj = createInstance(Schema, {
             instanceId
         });

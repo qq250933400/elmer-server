@@ -1,8 +1,8 @@
-import { schemaConfig } from "../../Validation";
+import { defineSchema } from "../../Validation/defineSchema";
 import { IConfigValidationOptionalFields } from "../interface/IConfigValidationOptionalFields";
 import { IConfigServer } from "../interface/IConfigServer";
 
-export default schemaConfig.defineSchema<IConfigValidationOptionalFields, {},IConfigServer>({
+export default defineSchema<IConfigValidationOptionalFields, {},IConfigServer>({
     host: {
         type: "String",
         required: true,

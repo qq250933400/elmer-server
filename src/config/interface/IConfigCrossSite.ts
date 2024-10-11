@@ -1,15 +1,14 @@
-type TypeRequestMethod = "GET" | "POST" | "OPTIONS" | "PUT" | "DELETE";
+
 export interface IConfigCrossSiteRoute {
-    path: String;
-    method: TypeRequestMethod[];
-    allowHeaders: String[];
+    path: string;
+    method: string[];
     withCredentials: boolean;
-    headers?: any;
+    headers?: string[];
 }
 
 export interface IConfigCrossSiteRule {
-    allowHeaders: String[];
-    domain: String;
+    allowHeaders: string[];
+    domain: string|string[];
     rules: IConfigCrossSiteRoute[];
     withCredentials?: boolean;
     headers?: any;

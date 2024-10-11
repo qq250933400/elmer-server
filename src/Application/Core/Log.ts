@@ -1,15 +1,16 @@
 import log4js from "log4js";
 import { AppService  } from "../../Annotation/module";
-import { GetConfig  } from "../../Config";
+import { GetConfig  } from "../../Config/GetConfig";
 import { IConfigLog } from "../../Config/interface/IConfigLog";
+
 
 @AppService
 export class Log {
     @GetConfig("Log")
-    private config: IConfigLog;
+    private config!: IConfigLog;
 
     private logger: log4js.Logger;
-    private isLoadConfig: boolean;
+    private isLoadConfig!: boolean;
     constructor() {
         this.logger = log4js.getLogger();
     }

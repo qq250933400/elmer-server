@@ -3,6 +3,7 @@ import { IConfigServer } from "./IConfigServer";
 import { IConfigLog } from "./IConfigLog";
 import { IConfigEmail } from "./IConfigEmail";
 import { IConfigSession } from "./IConfigSession";
+import { IConfigCrossSite } from "./IConfigCrossSite";
 
 export interface IConfigApplication {
     Server: IConfigServer;
@@ -10,5 +11,5 @@ export interface IConfigApplication {
     Log: IConfigLog;
     Email: IConfigEmail;
     Session: IConfigSession;
-    others?: any;
+    Security: IConfigCrossSite;
 }

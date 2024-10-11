@@ -7,7 +7,8 @@ import {
     META_VALUE_MODULE_APPSERVICE,
     META_VALUE_MODULE_REQUEST,
     META_VALUE_MODULE_INJECT,
-    META_KEY_INSTANCE_ID
+    META_KEY_INSTANCE_ID,
+    PROTECT_MODULE_IDS
 } from "../data/constants";
 import { createInstance } from "./createInstance";
 import { IAnnotationOption } from "../interface/IAnnotation";
@@ -21,6 +22,10 @@ interface IModuleData {
 interface IDefineModuleOption {
     errmsg?: string;
     moduleId?: string;
+}
+
+interface IAppServiceExOption {
+    overrideId?: boolean;
 }
 
 const moduleData: IModuleData = {
@@ -78,6 +83,21 @@ export const AppService = <IFactory extends new(...args: any[]) => any>(Factory:
         return defineModule<IFactory>(Factory, META_VALUE_MODULE_APPSERVICE, context);
     }
 };
+/**
+ * 注入模块，自定义模块id
+ * @param moduleId 模块Id
+ * @returns 
+ */
+export const AppServiceEx = <IFactory extends new(...args: any[]) => any>(moduleId: string, opt?: IAppServiceExOption) => (Factory: IFactory, context: ClassDecoratorContext<any>) => {
+    if(context.kind === "class") {
+        if(PROTECT_MODULE_IDS.includes(moduleId) && !opt?.overrideId) {
+            throw new Error(`the module id is protect, can not be used. (${moduleId})`);
+        }
+        return defineModule<IFactory>(Factory, META_VALUE_MODULE_APPSERVICE, context, {
+            moduleId
+        });
+    }
+};
 
 export const AppRequest = (Factory: new(...args: any[]) => any, context: ClassDecoratorContext<any>) => {
     defineModule(Factory, META_VALUE_MODULE_REQUEST, context);
@@ -91,9 +111,11 @@ export const AppModel = <IFactory extends new(...args: any[]) => any, Args exten
     if(!validateModule(Factory)) {
         throw new Error(`The @AppModel can only be used on a class was defined by AppService, AppRequest. (${getModuleId(Factory)})`);
     }
-    const initParams = function(opt: IAnnotationOption, ...p: any[]) {
+    const initParams = function(...params: any[]) {
+        const opt: IAnnotationOption = params[0], rest: any[] = params.splice(0,1);
         const instanceId = opt.instanceId;
         const newParams: any[] = [];
+        // 初始化传入Factory参数
         args.forEach((item) => {
             if(validateModule(item)) {
                 const obj = createInstance(item, {
@@ -104,11 +126,11 @@ export const AppModel = <IFactory extends new(...args: any[]) => any, Args exten
                 newParams.push(item);
             }
         });
-        return [...newParams, ...p];
+        return [...newParams, ...rest];
     };
     return class extends Factory {
         constructor(...reset: any[]) {
-            super(...initParams.apply(null, reset));
+            super(...initParams(...reset));
         }
     }
 };

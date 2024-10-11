@@ -1,1 +1,2 @@
-export { AppService, AppModel } from "./module";
+export { AppService, AppModel, AppRequest } from "./module";
+export { createInstance } from "./createInstance";

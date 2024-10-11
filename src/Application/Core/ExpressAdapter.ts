@@ -6,9 +6,11 @@ import lodash from "lodash";
 import { createRequestRoutes, IDefineRequestParam, IDefineRoute } from "../Request/Annotation";
 import { Log } from "./Log";
 import { GLOBAL_KEY_SESSION_ID_KEY } from "../../data/constants";
+import { createInstanceInApp } from "../../Annotation/createInstance";
+import { CrossOrigin } from "./CrossOrigin";
 
 export class ExpressAdapter extends Adapter {
-    
+
     private app: Express;
     constructor() {
         super();
@@ -18,15 +20,15 @@ export class ExpressAdapter extends Adapter {
         const serverConfig = this.configuration?.Server;
         const rootPath = (this.configuration as any).rootPath;
         const staticPath = path.resolve(rootPath, serverConfig?.staticPath);
-        if(!serverConfig) {
+        if (!serverConfig) {
             throw new Error("未正确加载配置信息！");
         }
-        if(utils.isEmpty(serverConfig?.staticRoute)) {
+        if (utils.isEmpty(serverConfig?.staticRoute)) {
             this.app.use(express.static(serverConfig.staticPath));
         } else {
             this.app.use(serverConfig?.staticRoute, express.static(serverConfig.staticPath));
         }
-        if(utils.isEmpty(serverConfig.staticRoute)) {
+        if (utils.isEmpty(serverConfig.staticRoute)) {
             this.app.use(express.static(staticPath));
             log.info(`Static resource, path: ${staticPath}`);
         } else {
@@ -64,13 +66,13 @@ export class ExpressAdapter extends Adapter {
     put(url: string, handler: Function): void {
         this.app.put(url, handler as any);
     }
-    getParam(opt: IDefineRequestParam[], route: IDefineRoute ,req: Request, res: Response): any[] {
+    getParam(opt: IDefineRequestParam[], route: IDefineRoute, req: Request, res: Response): any[] {
         const params: any[] = [];
         opt.forEach((item) => {
-            switch(item.type) {
+            switch (item.type) {
                 case 'PathParam': {
                     const fieldId = item.args?.toString();
-                    params.push(this.getPathParam(route, req, fieldId));
+                    params.push(fieldId && this.getPathParam(route, req, fieldId));
                     break;
                 }
                 case 'Body': {
@@ -107,13 +109,14 @@ export class ExpressAdapter extends Adapter {
     }
     public loadRouter(log: Log) {
         this.app.use(express.json());
+        this.crossOriginCheck();
         log.info("Load routers: ");
         const routeLogs = createRequestRoutes(this, (req: Request, res: Response) => {
             log.info(`${req.method} ${req.url}`);
             //--------CreateSession id
             const SSID = this.configuration.Session?.sessionIdKey || GLOBAL_KEY_SESSION_ID_KEY;
             const oldSessionId = this.getCookies(req, SSID);
-            if(utils.isEmpty(oldSessionId)) {
+            if (utils.isEmpty(oldSessionId)) {
                 const newSessionId = utils.md5(`session_${utils.uuid()}_${Date.now()}`);
                 res.cookie(SSID, newSessionId, {
                     "httpOnly": true,
@@ -130,23 +133,25 @@ export class ExpressAdapter extends Adapter {
             }).catch((error) => {
                 log.error(error.stack);
                 res.status(error.code || 500);
-                if(error.data) {
+                if (error.data) {
                     res.send({
                         statusCode: error.statusCode || "Unknown",
                         message: error.message,
                         stack: error.data
                     })
                 } else {
-                    res.send({ statusCode: error.statusCode || "Unknown", message: error.message});
+                    res.send({ statusCode: error.statusCode || "Unknown", message: error.message });
                 }
             });
         });
-        routeLogs[0] = routeLogs[0].substring(1); // 为兼容Log4j打印多参数自动加1一个空格问题
+        if (routeLogs.length > 0) {
+            routeLogs[0] = routeLogs[0].substring(1); // 为兼容Log4j打印多参数自动加1一个空格问题
+        }
         log.info("Routes:", '\n', routeLogs.join("\n"));
     }
-    private getCookies(req: Request, fieldNames?: string|string[]) {
+    private getCookies(req: Request, fieldNames?: string | string[]) {
         let cookieData = req.cookies || {};
-        if(Object.keys(cookieData).length === 0) {
+        if (Object.keys(cookieData).length === 0) {
             const cookieValue = this.getHeaders(req, "cookie");
             const uriData = utils.toUri(cookieValue);
             cookieData = uriData;
@@ -159,11 +164,11 @@ export class ExpressAdapter extends Adapter {
      * @param fieldNames 字段名
      * @returns 
      */
-    private getHeaders(req: Request, fieldNames?: string|string[]) {
+    private getHeaders(req: Request, fieldNames?: string | string[]) {
         const headerData = req.headers || {};
         return this.getParamDecoratorData(headerData, fieldNames, (name: string) => name?.toLowerCase());
     }
-    private getQueryParams(req: Request, fieldNames?: string|string[]) {
+    private getQueryParams(req: Request, fieldNames?: string | string[]) {
         const uriData = req.query || {};
         return this.getParamDecoratorData(uriData, fieldNames);
     }
@@ -172,7 +177,7 @@ export class ExpressAdapter extends Adapter {
      * @param req 
      * @param fieldNames 
      */
-    private getRequestBody(req: Request, fieldNames?: string|string[]) {
+    private getRequestBody(req: Request, fieldNames?: string | string[]) {
         return this.getParamDecoratorData(req.body, fieldNames);
     }
     /**
@@ -194,19 +199,36 @@ export class ExpressAdapter extends Adapter {
      * @param fieldNames - 获取字段Key
      * @returns 
      */
-    private getParamDecoratorData(sourceData: any, fieldNames?: string|string[], nameFormat?: Function) {
-        if(utils.isArray(fieldNames)) {
+    private getParamDecoratorData(sourceData: any, fieldNames?: string | string[], nameFormat?: Function) {
+        if (utils.isArray(fieldNames)) {
             const objResult = {};
             fieldNames.forEach((name: string) => {
                 const nameEx = typeof nameFormat === "function" ? nameFormat(name) : name;
                 lodash.set(objResult, name, lodash.get(sourceData, nameEx));
             });
             return objResult;
-        } else if(!utils.isEmpty(fieldNames)) {
+        } else if (!utils.isEmpty(fieldNames)) {
             const nameEx = typeof nameFormat === "function" ? nameFormat(fieldNames) : fieldNames;
             return lodash.get(sourceData, nameEx);
         } else {
             return sourceData;
         }
+    }
+    private crossOriginCheck() {
+        this.app.use("*", (req: Request, res: Response, next) => {
+            const crossOrginObj = createInstanceInApp(CrossOrigin, this);
+            const matchAllowHeaders = crossOrginObj.isValidateRequest({
+                headers: req.headers as any,
+                method: req.method,
+                origin: req.originalUrl,
+                url: req.baseUrl
+            });
+            if (matchAllowHeaders) {
+                matchAllowHeaders.forEach((header) => {
+                    res.header(header.name, header.value);
+                });
+            }
+            next();
+        });
     }
 }

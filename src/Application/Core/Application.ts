@@ -1,4 +1,4 @@
-import { AppService, AppModel } from "../../Annotation/index";
+import { AppServiceEx, AppModel } from "../../Annotation/module";
 import { META_KEY_CONFIG_INFO } from "../../data/constants";
 import { parse } from "yaml";
 import { IConfigApplication } from "../../Config/interface";
@@ -23,12 +23,10 @@ interface IConfigInfo {
 }
 
 @AppModel(Log)
-@AppService
+@AppServiceEx("Application", { "overrideId": true })
 export class Application {
     public configuration: IConfigApplication = {} as any;
-    constructor(private log: Log) {
-        
-    }
+    constructor(private log: Log) {}
     init(bootApp: any) {
         this.loadConfig(bootApp);
     }

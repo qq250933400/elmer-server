@@ -11,11 +11,6 @@ import { validateModule, getModuleId } from "./module";
 import utils from "../utils/utils";
 import { IAnnotationOption } from "../interface/IAnnotation";
 
-interface IInitParams {
-    instanceId: string;
-    requestId?: string;
-}
-
 const instanceData = {};
 
 export const createInstance = <Factory extends new(...args: any[]) => any>(
@@ -65,17 +60,17 @@ export const createInstance = <Factory extends new(...args: any[]) => any>(
             break;
         }
         case META_VALUE_MODULE_REQUEST: {
-            if(utils.isEmpty(opt.requestId)) {
+            if(!opt || utils.isEmpty(opt.requestId)) {
                 throw new Error("requestId cannot be empty");
             }
             if(!instanceObj?.request) {
                 throw new Error(`The request instance not exists.`);
             }
-            if(!instanceObj.request[opt.requestId]) {
+            if(opt?.requestId && !instanceObj.request[opt.requestId]) {
                 instanceObj.request[opt.requestId] = {};
             }
             const mid = getModuleId(Target);
-            if(instanceObj.request[opt.requestId][mid]) {
+            if(opt.requestId && instanceObj.request[opt.requestId][mid]) {
                 moduleObj = instanceObj.request[opt.requestId][mid];
             } else {
                 moduleObj = new Target(...[opt, ...params]);
@@ -109,6 +104,27 @@ export const getModuleObj = <ModuleFactory extends new(...args: any[]) => any>(F
         console.error("todo: not implements");
     }
 };
+export const getModuleById = (instanceId: string, moduleId: string) => {
+    const instanceObj = instanceData[instanceId];
+    if(!instanceObj) {
+        return undefined;
+    }
+    return instanceObj.service[moduleId] || instanceObj.request[moduleId];
+};
+/**
+ * 此方法用于在Adapter中获取模块实例，在其他模块调用时请使用，AppModel注入的方式
+ * @param Target - 初始化模块
+ * @param owenBy - 调用模块所在类
+ * @returns 
+ */
+export const createInstanceInApp = <Factory extends new(...args: any[]) => any>(Target: Factory, owenBy: Object, ...args: any[]) => {
+    const instanceId = Reflect.getMetadata(META_KEY_INSTANCE_ID, owenBy);
+    const requestId = Reflect.getMetadata(META_KEY_REQUEST_ID, owenBy);
+    return createInstance(Target, {
+        instanceId,
+        requestId
+    }, ...args);
+}
 
 export const releaseRequest = (instanceId: string, requestId: string) => {
     const instanceObj = instanceData[instanceId];

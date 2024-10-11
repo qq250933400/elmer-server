@@ -1,7 +1,6 @@
 import "reflect-metadata";
 import { GetConfig } from "../Config";
 import { IConfigServer } from "../Config/interface/IConfigServer";
-import { AppService } from "../bak/core/Module";
 import { Request } from "express";
 import utils from "./utils";
 import * as path from "path";
@@ -31,7 +30,6 @@ export type TypeUploadCallback = (action: TypeUploadAction, info: TypeUploadInfo
     saveFileName?: string
 }) => TypeUploadInfo;
 
-@AppService
 export class StaticFiles {
 
     @GetConfig("Server", "staticPath")
