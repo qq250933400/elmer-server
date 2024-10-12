@@ -1,6 +1,7 @@
 import { Adapter } from "../Core/Adapter";
-import { META_KEY_MODULE_ID, META_KEY_INSTANCE_ID } from "../../data/constants";
+import { META_VALUE_MODULE_PARAM, META_KEY_INSTANCE_ID } from "../../data/constants";
 import { createInstance, releaseRequest, getInstanceId } from "../../Annotation/createInstance";
+import { validateModule } from "../../Annotation/module";
 import { Schema } from "../../Validation/Schema";
 import { Exception } from "../Core/Exception";
 
@@ -56,7 +57,7 @@ export const GetParam = (opt: IDefineRequestParam[]) => (value: Function, contex
         const adapter: Adapter = args[0];
         const reset = args.filter((value, index) => index > 0);
         const params = adapter.getParam(opt, ...reset);
-        return value(...params);
+        return value.call(this, ...params);
     }
 };
 
@@ -65,7 +66,7 @@ export const RequestMapping = (pathname: string, method?: keyof typeof RequestMe
         throw new Error("The RequestMapping can not use with other class decorator");
     }
     const requestCallback = function<This>(this: This, ...args: any[]) {
-        return value(...args);
+        return value.call(this, ...args);
     };
     requestCallback["isRequestMapping"] = true;
     requestDataStore.tempRequest.push({
@@ -86,20 +87,39 @@ export const Options = (pathname: string) => RequestMapping(pathname, "OPTIONS")
 export const createRequestRoutes = (adapter: Adapter, beforeHandler: Function, responseHandle: Function) => {
     // requestMapping.forEach(callback => callback());
     const routes: IDefineRoute[] = requestDataStore.requests || [];
+    const initInjectParams = (paramsList: any[],instanceId: string, requestId: string) => {
+        const newParams: any[] = [];
+        // 初始化传入Factory参数
+        paramsList.forEach((item) => {
+            if(validateModule(item)) {
+                const obj = createInstance(item, {
+                    instanceId,
+                    requestId
+                });
+                newParams.push(obj);
+            } else {
+                newParams.push(item);
+            }
+        });
+        return newParams;
+    };
     const routeHandler = (route: IDefineRoute, beforeHandler: Function, ...args: any[]) => {
         // Reflect.defineMetadata(META_KEY_MODULE_ID, adapter);
         const instanceId = Reflect.getMetadata(META_KEY_INSTANCE_ID, adapter);
         const requestId = uuid();
-        const constroller = createInstance(route.Target, {
+        const injectParams = Reflect.getMetadata(META_VALUE_MODULE_PARAM, route.Target);
+        const injectParamList = initInjectParams(injectParams || [], instanceId, requestId);
+        const controller = createInstance(route.Target, {
             instanceId: instanceId,
             requestId: requestId
-        });
+        }, ...injectParamList);
+
         return new Promise((resolve, reject)=> {
             beforeHandler(...args);
-            utils.invokeEx(constroller, route.callbackName, adapter, route, ...args)
+            utils.invokeEx(controller, route.callbackName, adapter, route, ...args)
                 .then((resp) => {
                     resolve(resp);
-                    releaseRequest(instanceId, requestId);
+                    // releaseRequest(instanceId, requestId);
                 }).catch((err) => {
                     reject(err);
                     releaseRequest(instanceId, requestId);
@@ -187,6 +207,6 @@ export const RBValidate = <Data, FormatCallback extends Record<string, Function>
         if(!validationResult.positive) {
             throw new Exception(500,`The request body is not match the validation schema.`, "vd-Failed", validationResult.negative);
         }
-        return value(...args);
+        return value.call(this, ...args);
     }
 };

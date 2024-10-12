@@ -8,6 +8,8 @@ import {
     META_VALUE_MODULE_REQUEST,
     META_VALUE_MODULE_INJECT,
     META_KEY_INSTANCE_ID,
+    META_VALUE_MODULE_DATABASE,
+    META_VALUE_MODULE_PARAM,
     PROTECT_MODULE_IDS
 } from "../data/constants";
 import { createInstance } from "./createInstance";
@@ -48,11 +50,8 @@ export const defineModule = <IFactory extends new(...args: any[]) => any>(Target
         // ts5定义方式
         
         moduleData.factory[mid] = Target;
-        return class extends Target {
-            constructor(...params: any[]) {
-                super(...params);
-            }
-        }
+    
+        return Target;
     } else {
         throw new Error(`This decorator is a class decorator. [${context.name}]`);
     }
@@ -65,7 +64,7 @@ export const defineModule = <IFactory extends new(...args: any[]) => any>(Target
  * @returns 
  */
 export const validateModule = (Target: new(...args: any[]) => any) => {
-    const moduleId = Reflect.getMetadata(META_KEY_MODULE_ID, Target);
+    const moduleId = Reflect.getMetadata(META_KEY_MODULE_ID, Target) || (Target.prototype?.constructor && validateModule(Target.prototype.constructor));
     return !utils.isEmpty(moduleData.factory[moduleId]);
 };
 
@@ -100,7 +99,7 @@ export const AppServiceEx = <IFactory extends new(...args: any[]) => any>(module
 };
 
 export const AppRequest = (Factory: new(...args: any[]) => any, context: ClassDecoratorContext<any>) => {
-    defineModule(Factory, META_VALUE_MODULE_REQUEST, context);
+    return defineModule(Factory, META_VALUE_MODULE_REQUEST, context);
 };
 
 
@@ -126,8 +125,10 @@ export const AppModel = <IFactory extends new(...args: any[]) => any, Args exten
                 newParams.push(item);
             }
         });
+        console.log("----++--", context.name, params)
         return [...newParams, ...rest];
     };
+    Reflect.defineMetadata(META_VALUE_MODULE_PARAM, args, Factory);
     return class extends Factory {
         constructor(...reset: any[]) {
             super(...initParams(...reset));

@@ -1,6 +1,7 @@
-import { Controller, RequestMapping, GetConfig, GetParam, Exception, Get, Validation, RBValidate } from "../../src";
+import { Controller, RequestMapping, AppModel, GetConfig, GetParam, Exception, Get, Validation, RBValidate } from "../../src";
 import { utils } from "../../src";
 import { Response } from "express";
+import { Test } from "./Test";
 
 type TypeRequestBody = {
     text: string;
@@ -36,14 +37,15 @@ const orderSchema = Validation.defineSchema<{ length: number, minLength: number 
         }
     }
 })
-
+@AppModel(Test)
 @Controller("/api")
 export class Api {
 
     constructor(
-        // private fileObj: StaticFiles,
-        // private email: Email
-    ) {}
+        private test: Test
+    ) {
+        console.log("Api-constructor--", test);
+    }
 
     @Get("/guid")
     guid(response: Response) {
@@ -69,6 +71,7 @@ export class Api {
         console.log("requesyQuery: ", queryParams);
         console.log("accept-language", lang);
         console.log("AuthId: ", AuthId);
+        console.log(this.test.where());
         // return utils.aseEncode(body.text, this.config.publicKey);
         return {
             value: "hello world"

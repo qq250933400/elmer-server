@@ -1,11 +1,8 @@
 import {
     META_KEY_MODULE_TYPE,
-    META_KEY_INSTANCE_ID,
     META_VALUE_BOOT_APPLICATION
 } from "../../data/constants";
-import { GetConfig } from "../../Config";
 
-console.log("----startApplication-config", GetConfig);
 import { v7 as uuid } from "uuid";
 import { createInstance } from "../../Annotation/createInstance";
 import { ExpressAdapter } from "../Core/ExpressAdapter";

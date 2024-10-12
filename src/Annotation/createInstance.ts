@@ -1,11 +1,12 @@
 import {
-    META_KEY_MODULE_ID,
+    META_VALUE_MODULE_DATABASE,
     META_KEY_INSTANCE_ID,
     META_KEY_REQUEST_ID,
     META_KEY_MODULE_TYPE,
     META_VALUE_BOOT_APPLICATION,
     META_VALUE_MODULE_APPSERVICE,
-    META_VALUE_MODULE_REQUEST
+    META_VALUE_MODULE_REQUEST,
+    META_VALUE_MODULE_CONTROLLER
 } from "../data/constants";
 import { validateModule, getModuleId } from "./module";
 import utils from "../utils/utils";
@@ -73,12 +74,51 @@ export const createInstance = <Factory extends new(...args: any[]) => any>(
             if(opt.requestId && instanceObj.request[opt.requestId][mid]) {
                 moduleObj = instanceObj.request[opt.requestId][mid];
             } else {
-                moduleObj = new Target(...[opt, ...params]);
+                moduleObj = new Target(...[opt, ...params]); //  TODO: 待优化，此处需要优化，使用工厂模式创建实例
+                instanceObj.request[opt.requestId][mid] = moduleObj;
             }
             Reflect.defineMetadata(META_KEY_REQUEST_ID, opt.requestId, moduleObj);
             break;
         }
+        case META_VALUE_MODULE_CONTROLLER: {
+            if(!opt || utils.isEmpty(opt.requestId)) {
+                throw new Error("requestId cannot be empty");
+            }
+            if(!instanceObj?.request) {
+                throw new Error(`The request instance not exists.`);
+            }
+            if(opt?.requestId && !instanceObj.request[opt.requestId]) {
+                instanceObj.request[opt.requestId] = {};
+            }
+            const mid = getModuleId(Target);
+            if(opt.requestId && instanceObj.request[opt.requestId][mid]) {
+                moduleObj = instanceObj.request[opt.requestId][mid];
+            } else {
+                moduleObj = new Target(...params);
+                // 新版装饰器无法获取模块原型链，需要传入instanceId,做标识
+                // 创建Controller的时候获取到的是Controller装饰器载入的原型，使用其他装饰器以后获取到的原型和Controller原型不一致
+                instanceObj.request[opt.requestId][mid] = moduleObj;
+            }
+            Reflect.defineMetadata(META_KEY_REQUEST_ID, opt.requestId, moduleObj);
+            break;
+        }
+        case META_VALUE_MODULE_DATABASE: {
+            const mid = getModuleId(Target);
+            // 单独定义DataBase，遇到并发时在所有数据库处理结束后再统一释放
+            // 不在每个请求发起时连接一次数据库
+            // 减少数据库连接
+            if(instanceObj.service[mid]) {
+                return instanceObj.service[mid];
+            } else {
+                moduleObj = new Target(...[opt, ...params]);
+                instanceObj.service[mid] = moduleObj;
+            }
+            break;
+        }
         default: {
+            if(!utils.isEmpty(moduleType)) {
+                throw new Error(`Module type is not implements.(${moduleType})`);
+            }
             if(typeof Target === "function") {
                 moduleObj = new Target(...params);
             } else {
