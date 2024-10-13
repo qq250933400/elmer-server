@@ -44,7 +44,7 @@ export class Api {
     constructor(
         private test: Test
     ) {
-        console.log("Api-constructor--", test);
+        
     }
 
     @Get("/guid")

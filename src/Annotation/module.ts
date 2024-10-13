@@ -125,7 +125,7 @@ export const AppModel = <IFactory extends new(...args: any[]) => any, Args exten
                 newParams.push(item);
             }
         });
-        console.log("----++--", context.name, params)
+        
         return [...newParams, ...rest];
     };
     Reflect.defineMetadata(META_VALUE_MODULE_PARAM, args, Factory);

@@ -119,7 +119,7 @@ export const createRequestRoutes = (adapter: Adapter, beforeHandler: Function, r
             utils.invokeEx(controller, route.callbackName, adapter, route, ...args)
                 .then((resp) => {
                     resolve(resp);
-                    // releaseRequest(instanceId, requestId);
+                    releaseRequest(instanceId, requestId);
                 }).catch((err) => {
                     reject(err);
                     releaseRequest(instanceId, requestId);
