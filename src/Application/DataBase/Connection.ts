@@ -11,7 +11,7 @@ export class Connection {
     private db: DataBaseEngine;
 
     @GetConfig("DataBase")
-    private config!: IConfigDB;
+    public config!: IConfigDB;
 
     init() {
         const dataBaseEngine = this.config.type || "Mysql";

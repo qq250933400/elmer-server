@@ -71,7 +71,7 @@ export class Api {
         console.log("requesyQuery: ", queryParams);
         console.log("accept-language", lang);
         console.log("AuthId: ", AuthId);
-        console.log(this.test.where());
+        console.log(this.test.getUserList());
         // return utils.aseEncode(body.text, this.config.publicKey);
         return {
             value: "hello world"

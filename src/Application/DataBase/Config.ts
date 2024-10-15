@@ -19,8 +19,13 @@ export const DataBase = <IFactory extends new(...args: any[]) => any>(tableName:
         throw new Error(`Define that data modules must inherit the baseModel. (${context.name})`);
     }
     const defineDataModel = class extends Factory {
-        static readonly tableName: string = tableName;
-        static readonly tableConfig: IDataTableConfig = config;
+        readonly tableName: string = tableName;
+        readonly tableConfig: IDataTableConfig = config;
+        constructor(...args: any[]) {
+            super(...args);
+            Factory['tableName'] = tableName;
+            Factory['tableConfig'] = config;
+        }
     }
     return defineModule(defineDataModel, META_VALUE_MODULE_DATABASE, context);
 };
