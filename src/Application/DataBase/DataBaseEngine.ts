@@ -10,8 +10,9 @@ export abstract class DataBaseEngine {
     public log: Log;
 
     abstract dispose(): void;
-    abstract loadConnection(): void;
+    abstract loadConnection(config: IConfigDB): void;
     abstract connect(): Promise<any>;
+    abstract query(sql: string, params?: any[]): Promise<any>;
 
     constructor(opt: any) {
         this.utils = createInstance(UtilsService, opt);
@@ -21,9 +22,12 @@ export abstract class DataBaseEngine {
         if(utils.isEmpty(config?.host) || utils.isEmpty(config?.password)) {
             throw new Error("Database config error");
         }
+        const password = this.utils.config.publicKey ? this.utils.aseDecode(config.password) : config.password;
         this.config = config;
-        this.config.password = this.utils.config.publicKey ? this.utils.aseDecode(config.password) : config.password;
-        this.loadConnection();
+        this.loadConnection({
+            ...config,
+            password
+        });
     }
     error(message: string, ...args: any): void {
         this.log.error(message, ...args);

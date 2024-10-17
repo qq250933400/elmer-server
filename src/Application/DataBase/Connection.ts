@@ -25,4 +25,16 @@ export class Connection {
     startTransaction() {
         this.db.connect();
     }
+    query(sql: string, params: any[]): Promise<any> {
+        return new Promise((resolve, reject) => {
+            this.db.log.info("Sql: ", sql);
+            this.db.query(sql, params)
+                .then(resolve)
+                .catch((err) => {
+                    this.db.log.error(err.stack);
+                    reject(err);
+                });
+        })
+        
+    }
 }

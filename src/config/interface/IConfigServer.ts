@@ -7,4 +7,5 @@ export interface IConfigServer {
     staticRoute: string;
     uploadPath: string;
     tempPath: string;
+    rootPath: string;
 }

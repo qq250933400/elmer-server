@@ -16,7 +16,7 @@ export const DataBase = <IFactory extends new(...args: any[]) => any>(tableName:
     const tableSymbol = TableSymbol.toString();
 
     if(defineSymbol !== tableSymbol) {
-        throw new Error(`Define that data modules must inherit the baseModel. (${context.name})`);
+        throw new Error(`Define that data modules must inherit the DataModel. (${context.name})`);
     }
     const defineDataModel = class extends Factory {
         readonly tableName: string = tableName;

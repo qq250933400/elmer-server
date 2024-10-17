@@ -8,6 +8,7 @@ import * as fs from "fs";
 import { md5 } from "./md5";
 import mediaTypes from "./mediaTypes";
 import { v7 as uuid } from "uuid";
+import { AppService } from "../Annotation";
 
 type TypeUploadAction = "Connect" | "Data" | "Complete" | "AfterSave";
 
@@ -30,6 +31,7 @@ export type TypeUploadCallback = (action: TypeUploadAction, info: TypeUploadInfo
     saveFileName?: string
 }) => TypeUploadInfo;
 
+@AppService
 export class StaticFiles {
 
     @GetConfig("Server", "staticPath")

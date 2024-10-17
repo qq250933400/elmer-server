@@ -12,7 +12,7 @@ class Application {
  * @param id - 配置Category 下的id
  * @returns 
  */
-export const GetConfig = <ConfigKey extends keyof IConfigApplication>(key?: ConfigKey, id?: keyof IConfigApplication[ConfigKey]) => (value: any, context: ClassFieldDecoratorContext<any, any>): any => {
+export const GetConfig = <ConfigKey extends keyof IConfigApplication>(key?: ConfigKey | 'rootPath', id?: keyof IConfigApplication[ConfigKey]) => (value: any, context: ClassFieldDecoratorContext<any, any>): any => {
     return function(this: any) {
         if(context.kind === "field") {
             const getConfigData = function(this: any) {

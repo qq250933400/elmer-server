@@ -1,52 +1,12 @@
 import utils from "../../utils/utils";
-import { IDataTableConfig } from "./Config";
-
-
-interface ICreateSqlToken {
-    type: 'alias'|'field'|'where';
-    value: string;
-}
-
-interface ICreateAliasOptions {
-    tableName: string;
-    key: string;
-    tablePrefix?: string;
-}
-
-abstract class DataModelTokenPlugin {
-    abstract alias(options: ICreateAliasOptions): string;
-}
-
-interface ICreateTokenConfig extends IDataTableConfig{
-    tablePrefix?: string;
-    tableName: string;
-    tokenPlugin?: DataModelTokenPlugin
-}
-
-interface ICreateAliasOptionsEx extends ICreateAliasOptions {
-    tokenPlugin?: DataModelTokenPlugin
-}
-
-interface ICreateWhereOptions extends ICreateTokenConfig  {
-    tokenList: Array<ICreateSqlToken>;
-    valueList: Array<string|number>;
-    alias?: string;
-}
-// --- where
-interface IWhereCondition {
-    logic: "IN"|"LIKE",
-    value: Array<string|number>;
-    field: string;
-    like?: string;
-}
-export type TWhereConditions = string|Array<string|IWhereCondition|Record<string, string|number>>; // 条件集合
-export type TWhereLogic = 'OR'|'AND';
+import { DataBaseSql } from "./token/ISql";
+import { join } from "./token/Join";
 /**
  * 创建数据表别名
  * @param param0 - 参数
  * @returns 
  */
-const alias = ({ tableName, key, tablePrefix, tokenPlugin }: ICreateAliasOptionsEx) => {
+const alias = ({ tableName, key, tablePrefix, tokenPlugin }: DataBaseSql.ICreateAliasOptionsEx) => {
     let value: string;
     if(typeof tokenPlugin?.alias === "function") {
         value = tokenPlugin.alias({
@@ -63,11 +23,50 @@ const alias = ({ tableName, key, tablePrefix, tokenPlugin }: ICreateAliasOptions
         value
     };
 };
-
-const where = (config: ICreateWhereOptions, condition: TWhereConditions, whereLogic: TWhereLogic = 'AND') => {
-    let whereValue: string[] = [];
+const limit = (config: DataBaseSql.ICreateTokenConfig, start: number, end: number) => {
+    if(typeof config.tokenPlugin?.["limit"] === "function") {
+        config.tokenList.push({
+            type: "limit",
+            value: config.tokenPlugin["limit"](start, end)
+        });
+    } else {
+        config.tokenList.push({
+            type: "limit",
+            value: `LIMIT ${start},${end}`
+        });
+    }
+    return {
+        select: () => select(config.tokenList, config),
+        update: () => update(config.tokenList, config),
+        delete: () => deleteExec(config.tokenList, config),
+    }
+};
+const field = (config: DataBaseSql.ICreateFieldsOptions, fieldConfig: string[]|string) => {
+    const aliasPrefix = !utils.isEmpty(config.alias) ? `${config.alias}.` : "";
+    const fieldValues: string[] = [];
+    if(utils.isArray(fieldConfig)) {
+        fieldConfig.forEach((name) => {
+            fieldValues.push(`${aliasPrefix}${name}`);
+        });
+    } else {
+        fieldValues.push(fieldConfig?.toString());
+    }
+    config.tokenList.push({
+        type: "field",
+        value: fieldValues.join(','),
+    });
+    return {
+        limit: (start: number, end: number) => limit(config, start, end),
+        select: () => select(config.tokenList, config),
+        update: () => update(config.tokenList, config),
+        delete: () => deleteExec(config.tokenList, config),
+    };
+};
+const where = (config: DataBaseSql.ICreateWhereOptions, condition: DataBaseSql.TWhereConditions, whereLogic: DataBaseSql.TWhereLogic = 'AND') => {
+    const whereValue: string[] = [];
     const valueList: Array<string|number> = [];
     const fieldPrefix = !utils.isEmpty(config.alias) ? `${config.alias}.` : "";
+    const prefixReg = /^[a-z]+\./i;
     if(utils.isString(condition)) {
         whereValue.push(condition);
     } else if(utils.isArray(condition)) {
@@ -75,15 +74,16 @@ const where = (config: ICreateWhereOptions, condition: TWhereConditions, whereLo
             if(utils.isString(item)) {
                 whereValue.push(item);
             } else if(utils.isObject(item)) {
+
                 if(utils.isEmpty(item.logic)) {
                     Object.keys(item).forEach((fieldName: string) => {
-                        const fieldNameValue = !fieldName.startsWith(fieldPrefix) ? `${fieldPrefix}${fieldName}` : fieldName;
+                        const fieldNameValue = !prefixReg.test(fieldName) ? `${fieldPrefix}${fieldName}` : fieldName;
                         whereValue.push(`${fieldNameValue}=?`);
                         valueList.push(item[fieldName]);
                     });
                 } else {
                     const fieldName = item.field.toString();
-                    const fieldNameValue = !fieldName.startsWith(fieldPrefix) ? `${fieldPrefix}${fieldName}` : fieldName;
+                    const fieldNameValue = !prefixReg.test(fieldName) ? `${fieldPrefix}${fieldName}` : fieldName;
                     const itemLogic = item.logic.toString().toUpperCase();
                     if(itemLogic === "IN") {
                         const inValue = '?'.repeat((item.value as string[]).length).split("").join(",");
@@ -109,19 +109,25 @@ const where = (config: ICreateWhereOptions, condition: TWhereConditions, whereLo
     config.valueList.push(...valueList);
 
     return {
+        field: (fields: string[]|string) => field(config, fields),
+        limit: (start: number, end: number) => limit(config, start, end),
         select: () => select(config.tokenList, config),
         update: () => update(config.tokenList, config),
         delete: () => deleteExec(config.tokenList, config),
     };
 }
 
-const createExec = (execCmd: 'SELECT'|'UPDATE'|'DELETE',tokenList: ICreateSqlToken[], { tablePrefix, tableName }: ICreateTokenConfig) => {
+const createExec = (
+    execCmd: 'SELECT'|'UPDATE'|'DELETE',
+    tokenList: DataBaseSql.ICreateSqlToken[],
+    { tablePrefix, tableName, valueList, query}: DataBaseSql.ICreateTokenConfig
+) => {
     const sqlList: string[] = [execCmd];
     const fieldsTokenList = tokenList.filter(item => item.type === 'field');
-    let hasAlias = false;
+    const fromTable = tablePrefix ? `${tablePrefix}${tableName}` : tableName;
+
     if(fieldsTokenList.length > 0) {
-        //
-        console.log("---CreateFieldsSql---");
+        sqlList.push(fieldsTokenList.map(item => item.value).join(","));
     } else {
         sqlList.push('*');
     }
@@ -132,47 +138,81 @@ const createExec = (execCmd: 'SELECT'|'UPDATE'|'DELETE',tokenList: ICreateSqlTok
                 if(item.type === 'alias') {
                     sqlList.push(item.value);
                 } else {
-                    const fromTable = tablePrefix ? `${tablePrefix}${tableName}` : tableName;
                     sqlList.push(fromTable);
                 }
             } else if(item.type === "where") {
+                sqlList.push(fromTable);
+                sqlList.push("WHERE");
                 sqlList.push(item.value);
             }
         } else {
             if(item.type === "where") {
-                sqlList.push(`where ${item.value}`);
+                sqlList.push(`WHERE ${item.value}`);
+            } else if(item.type === "limit") {
+                sqlList.push(item.value);
+            } else if(item.type === "join") {
+                sqlList.push(item.value);
             }
         }
     });
-    console.log("---FinalSql:--", tokenList,sqlList.join(" "));
+    const querySql = sqlList.join(" ");
+    return query(querySql, valueList);
 };
-const select = (tokenList: ICreateSqlToken[], config: ICreateTokenConfig) => {
+const select = (tokenList: DataBaseSql.ICreateSqlToken[], config: DataBaseSql.ICreateTokenConfig) => {
     return createExec("SELECT", tokenList, config);
 };
-const update = (tokenList: ICreateSqlToken[], config: ICreateTokenConfig) => {
+const update = (tokenList: DataBaseSql.ICreateSqlToken[], config: DataBaseSql.ICreateTokenConfig) => {
     return createExec("UPDATE", tokenList, config);
 };
-const deleteExec = (tokenList: ICreateSqlToken[], config: ICreateTokenConfig) => {
+const deleteExec = (tokenList: DataBaseSql.ICreateSqlToken[], config: DataBaseSql.ICreateTokenConfig) => {
     return createExec("DELETE", tokenList, config);
 };
-export const createSqlToken = (config: ICreateTokenConfig) => {
+export const createSqlToken = (config: Omit<DataBaseSql.ICreateTokenConfig, "tokenList"|"valueList">) => {
     const tokenList: any[] = [];
     const valueList: any[] = [];
+    const topSqlConfig = {
+        ...config,
+        tokenList,
+        valueList,
+    };
     return {
         alias: (key: string) => {
+            const sqlConfig = {
+                ...topSqlConfig,
+                alias: key
+            };
             tokenList.push(alias({
                 ...config,
                 key,
             }));
             return {
-                select: () => select(tokenList, config),
-                where: (condition: TWhereConditions, logic: TWhereLogic = 'AND') => where({
-                    ...config,
-                    tokenList,
-                    alias: key,
-                    valueList
-                }, condition, logic)
+                select: () => select(tokenList, sqlConfig),
+                update: () => update(tokenList, sqlConfig),
+                delete: () => deleteExec(tokenList, sqlConfig),
+                where: (condition: DataBaseSql.TWhereConditions, logic: DataBaseSql.TWhereLogic = 'AND') => where(sqlConfig, condition, logic),
+                field: (fields: string[]|string) => field(sqlConfig, fields),
+                limit: (start: number, end: number) => limit(sqlConfig, start, end),
+                join: (tableName: string, on: string, joinType: DataBaseSql.IJoinType = "LEFT") => {
+                    join(sqlConfig, {
+                        table: tableName,
+                        type: joinType,
+                        on
+                    });
+                    return {
+                        where: (condition: DataBaseSql.TWhereConditions, logic: DataBaseSql.TWhereLogic = 'AND') => where(sqlConfig, condition, logic),
+                        field: (fields: string[]|string) => field(sqlConfig, fields),
+                        limit: (start: number, end: number) => limit(sqlConfig, start, end),
+                        select: () => select(tokenList, sqlConfig),
+                        update: () => update(tokenList, sqlConfig),
+                        delete: () => deleteExec(tokenList, sqlConfig),
+                    }
+                }
             };
-        }
+        },
+        select: () => select(tokenList, topSqlConfig),
+        where: (condition: DataBaseSql.TWhereConditions, logic: DataBaseSql.TWhereLogic = 'AND') => where(topSqlConfig, condition, logic),
+        field: (fields: string[]|string) => field(topSqlConfig, fields),
+        limit: (start: number, end: number) => limit(topSqlConfig, start, end),
+        update: () => update(tokenList, topSqlConfig),
     }
 };

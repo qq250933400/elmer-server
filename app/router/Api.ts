@@ -1,7 +1,7 @@
-import { Controller, RequestMapping, AppModel, GetConfig, GetParam, Exception, Get, Validation, RBValidate } from "../../src";
+import { Controller, RequestMapping, AppModel, GetConfig, GetParam, Exception, Get, Validation, RBValidate, JsonToType } from "../../src";
 import { utils } from "../../src";
 import { Response } from "express";
-import { Test } from "./Test";
+import { Test, Options } from "./Test";
 
 type TypeRequestBody = {
     text: string;
@@ -37,12 +37,14 @@ const orderSchema = Validation.defineSchema<{ length: number, minLength: number 
         }
     }
 })
-@AppModel(Test)
+@AppModel(Test, Options, JsonToType)
 @Controller("/api")
 export class Api {
 
     constructor(
-        private test: Test
+        private test: Test,
+        private msjOptions: Options,
+        private jsonToType: JsonToType
     ) {
         
     }
@@ -63,18 +65,19 @@ export class Api {
         { type: "Body", args: "orderNo" },
         { type: "QueryParam", args: "orderNo"},
         { type: "Header", args: "Accept-Language"},
-        { type: "Cookie", args: "AuthId" }
+        { type: "Cookie", args: "AuthId" },
+        { type: "Body" }
     ])
     @RequestMapping("/encode", "POST")
-    encode(body: TypeRequestBody, queryParams: any, lang: string, AuthId: string) {
+    async encode(body: TypeRequestBody, queryParams: any, lang: string, AuthId: string, bodyData: any) {
         console.log("requestBody: ",body);
         console.log("requesyQuery: ", queryParams);
         console.log("accept-language", lang);
         console.log("AuthId: ", AuthId);
-        console.log(this.test.getUserList());
+        console.log(await this.msjOptions.getOptions());
         // return utils.aseEncode(body.text, this.config.publicKey);
-        return {
-            value: "hello world"
+        if(bodyData) {
+            return this.jsonToType.toType(bodyData, "IRequestBody");
         }
     }
 
