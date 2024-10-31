@@ -13,6 +13,9 @@ export abstract class DataBaseEngine {
     abstract loadConnection(config: IConfigDB): void;
     abstract connect(): Promise<any>;
     abstract query(sql: string, params?: any[]): Promise<any>;
+    abstract beginTransaction(): Promise<any>;
+    abstract commit(): Promise<any>;
+    abstract rollback(): Promise<any>;
 
     constructor(opt: any) {
         this.utils = createInstance(UtilsService, opt);

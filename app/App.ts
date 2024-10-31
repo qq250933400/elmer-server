@@ -30,25 +30,15 @@ export class App {
             db: 'trademark',
             table: 'msj_options',
             orgTable: 'msj_options',
-            name: 'id',
-            orgName: 'id',
+            name: 'create_user',
+            orgName: 'create_user',
             charsetNr: 63,
             length: 11,
             type: 3,
-            flags: 16899,
+            flags: 4097,
             decimals: 0,
             zeroFill: false,
-            protocol41: true,
-            details: {
-                name: "id",
-                type: "int",
-                length: 11,
-                unsigned: true,
-                autoIncrement: true
-            },
-            data: [ {label: "Hello", value: "Name"}]
-        }, "MysqlField");
-        console.log('boot application', this.config);
+            protocol41: true
+        }, "IDataBaseSqlColumn");
     }
 }
-

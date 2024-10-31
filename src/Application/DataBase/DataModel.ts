@@ -68,7 +68,31 @@ export class DataModel {
         }).alias(key);
     }
     public select() {
-        //console.log(this, this.getTableName());
+        return createSqlToken({
+            ...this.tableConfig,
+            tablePrefix: this.conn.config.prefix,
+            tableName: this.tableName,
+            query: (sql, params) => {
+                return new Promise((resolve, reject) => {
+                    this.conn.query(sql, params)
+                        .then((result) => {
+                            resolve(result);
+                        }).catch((error) => {
+                            console.error(error);
+                            reject(error);
+                        });
+                });
+            }
+        }).select();
+    }
+    beginTransaction(): Promise<any> {
+        return this.conn.beginTransaction();
+    }
+    commit(): Promise<any> {
+        return this.conn.commit();
+    }
+    rollback(): Promise<any> {
+        return this.conn.rollback();
     }
     protected getTableName() {
         const prefix = this.conn.config?.prefix;

@@ -4,4 +4,4 @@ export * from "./Annotation";
 export * as Validation from "./Validation";
 export * as utils from "./utils/utils";
 export * from "./Module/JsonToType";
-
+export * from "./Module";

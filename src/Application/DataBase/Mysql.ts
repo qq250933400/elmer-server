@@ -59,4 +59,40 @@ export class Mysql extends DataBaseEngine {
             });
         });
     }
+    beginTransaction(): Promise<any> {
+        return new Promise((resolve, reject) => {
+            this.conn.beginTransaction((err) => {
+                if(err) {
+                    this.error(err.errno.toString(),err.stack);
+                    reject(err);
+                } else {
+                    resolve(true);
+                }
+            });
+        });
+    }
+    commit(): Promise<any> {
+        return new Promise((resolve, reject) => {
+            this.conn.commit((err) => {
+                if(err) {
+                    this.error(err.errno.toString(),err.stack);
+                    reject(err);
+                } else {
+                    resolve(true);
+                }
+            });
+        });
+    }
+    rollback(): Promise<any> {
+        return new Promise((resolve, reject) => {
+            this.conn.rollback((err) => {
+                if(err) {
+                    this.error(err.errno.toString(),err.stack);
+                    reject(err);
+                } else {
+                    resolve(true);
+                }
+            });
+        });
+    }
 }

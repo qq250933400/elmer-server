@@ -15,7 +15,10 @@ export declare namespace DataBaseSql {
     abstract class DataModelTokenPlugin {
         abstract alias(options: ICreateAliasOptions): string;
     }
-
+    interface IQueryData {
+        data: any[];
+        fields
+    }
     interface ICreateTokenConfig extends IDataTableConfig{
         tablePrefix?: string;
         tableName: string;

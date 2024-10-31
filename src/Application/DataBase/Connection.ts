@@ -35,6 +35,14 @@ export class Connection {
                     reject(err);
                 });
         })
-        
+    }
+    beginTransaction(): Promise<any> {
+        return this.db.beginTransaction();
+    }
+    commit(): Promise<any> {
+        return this.db.commit();
+    }
+    rollback(): Promise<any> {
+        return this.db.rollback();
     }
 }

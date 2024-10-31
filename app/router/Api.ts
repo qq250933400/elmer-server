@@ -1,4 +1,4 @@
-import { Controller, RequestMapping, AppModel, GetConfig, GetParam, Exception, Get, Validation, RBValidate, JsonToType } from "../../src";
+import { Controller, RequestMapping, AppModel, Redis, GetParam, Exception, Get, Validation, RBValidate, JsonToType, UtilsService } from "../../src";
 import { utils } from "../../src";
 import { Response } from "express";
 import { Test, Options } from "./Test";
@@ -37,14 +37,16 @@ const orderSchema = Validation.defineSchema<{ length: number, minLength: number 
         }
     }
 })
-@AppModel(Test, Options, JsonToType)
+@AppModel(Test, Options, JsonToType, UtilsService, Redis)
 @Controller("/api")
 export class Api {
 
     constructor(
         private test: Test,
         private msjOptions: Options,
-        private jsonToType: JsonToType
+        private jsonToType: JsonToType,
+        private utilsService: UtilsService,
+        private redis: Redis
     ) {
         
     }
@@ -75,6 +77,18 @@ export class Api {
         console.log("accept-language", lang);
         console.log("AuthId: ", AuthId);
         console.log(await this.msjOptions.getOptions());
+        console.log("___Password___", this.utilsService.aseEncode("elmer_mo"));
+        const ssid = await this.redis.get('SSIDX',0);
+        console.log("---SSID---", ssid);
+        if(!ssid) {
+            const res = await this.redis.set("SSIDX", 'ELMER_MO', {
+                database: 0,
+                expire: 60
+            });
+            console.log(res);
+        }
+        // await this.redis.delete("SSIDX");
+        this.redis.quit(0);
         // return utils.aseEncode(body.text, this.config.publicKey);
         if(bodyData) {
             return this.jsonToType.toType(bodyData, "IRequestBody");

@@ -6,6 +6,7 @@ export interface IConfigServer {
     staticPath: string;
     staticRoute: string;
     uploadPath: string;
+    generateTypePath?: string;
     tempPath: string;
     rootPath: string;
 }

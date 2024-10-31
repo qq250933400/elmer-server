@@ -2,12 +2,17 @@ import { defineModule } from "../../Annotation/module";
 import { META_VALUE_MODULE_DATABASE } from "../../data/constants";
 import { TableSymbol, TableConfigSymbol } from "./DataModel";
 
-export interface IDataTableField {
-
+export interface IDataBaseSqlColumn {
+    type: 'TINYINT'|'INT'|'BIGINT'|'TEXT'|'DATE'|'DATETIME'|'TIME'|'TIMESTAMP'|'FLOAT'|'DOUBLE'|`CHAR(${number})`|`VARCHAR(${number})`;
+    length?: number;
+    primaryKey?: boolean;
+    autoIncrement?: boolean;
+    default?: string|number;
+    comment?: string;
 }
 
 export interface IDataTableConfig {
-    columns: Record<string, IDataTableField>;
+    columns: Record<string, Partial<IDataBaseSqlColumn>>;
 }
 
 export const DataBase = <IFactory extends new(...args: any[]) => any>(tableName: string, config: IDataTableConfig)=>(Factory: IFactory, context: ClassDecoratorContext<any>) => {

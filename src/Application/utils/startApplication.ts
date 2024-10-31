@@ -28,6 +28,13 @@ export const startApplication = (Factory: new(...args: any[]) => void) => {
     }, app);
     // todo: 初始化配置以后才执行main方法，在初始化的时候并没有同步数据导致无法正确获取config数据
     appInstance.init(app); // 准备应用
-    utils.invokeEx(app as any, "main", adapter.app); // 执行main方法，在运行前可自定义操作
-    appInstance.start(adapter); // 运行服务监听
+    if(typeof app['main'] === "function") {
+        utils.invokeEx(app as any, "main", adapter.app).then(() => {
+            appInstance.start(adapter); // 运行服务监听
+        }).catch((err) => {
+            console.error(err.stack);
+        }); // 执行main方法，在运行前可自定义操作
+    } else {
+        appInstance.start(adapter); // 运行服务监听
+    }
 }
