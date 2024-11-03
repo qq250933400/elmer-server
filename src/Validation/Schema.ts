@@ -1,6 +1,7 @@
 import { AppService } from "../Annotation/module";
 import { ISchemaConfig, ISchemaAttribute, ISchemaValidateType } from "./ISchemaValidation";
 import utils from "../utils/utils";
+import lodash from "lodash";
 
 interface IValidateAttrbuteConfig {
     schema: ISchemaAttribute<any, keyof ISchemaValidateType>;
@@ -36,6 +37,39 @@ export class Schema {
             positive,
             negative
         };
+    }
+    generateSchemaInitData<OptionalFields={}, FormatCallback extends Record<string, Function> = {}>(schema: ISchemaConfig<any, FormatCallback, OptionalFields>, formatCallback?: FormatCallback) {
+        const data: any = {};
+        Object.keys(schema).forEach((attrKey: string) => {
+            const rule = schema[attrKey];
+            switch(rule.type) {
+                case "String": {
+                    data[attrKey] = rule.defaultValue || "";
+                    break;
+                }
+                case "Boolean": {
+                    data[attrKey] = rule.defaultValue || false;
+                    break;
+                }
+                case "Number": {
+                    data[attrKey] = rule.defaultValue || 0;
+                    break;
+                }
+                case "Object": {
+                    if(rule.properties) {
+                        data[attrKey] = this.generateSchemaInitData(rule.properties, formatCallback);
+                    } else {
+                        data[attrKey] = {};
+                    }
+                    break;
+                }
+                case "Array": {
+                    data[attrKey] = rule.defaultValue || [];
+                    break;
+                }
+            }
+        });
+        return data;
     }
     private validateAttribute(config: IValidateAttrbuteConfig) {
         const { schema, format, attrValue, attrKey, negative, attrKeyPath } = config;

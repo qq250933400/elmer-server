@@ -5,13 +5,13 @@
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",
     "bin": {
-        "elmer-sev": "./lib/cmd.js"
+        "elmer-sev": "./lib/bin.js"
     },
     "scripts": {
         "start": "ts-node ./app/index.ts APP_ENV=PROD configPath=./app",
         "dev": "nodemon ./app/index.ts APP_ENV=dev configPath=./app",
         "test": "jest",
-        "cmd": "ts-node ./src/cmd.ts -h"
+        "cmd": "ts-node ./src/bin.ts init"
     },
     "author": "",
     "license": "ISC",

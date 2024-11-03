@@ -85,13 +85,13 @@ export class DataModel {
             }
         }).select();
     }
-    beginTransaction(): Promise<any> {
+    public beginTransaction(): Promise<any> {
         return this.conn.beginTransaction();
     }
-    commit(): Promise<any> {
+    public commit(): Promise<any> {
         return this.conn.commit();
     }
-    rollback(): Promise<any> {
+    public rollback(): Promise<any> {
         return this.conn.rollback();
     }
     protected getTableName() {
