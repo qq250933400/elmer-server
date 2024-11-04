@@ -31,13 +31,18 @@ interface IRequestDataStore {
     requests: any[];
 }
 
+interface IMappingOptions {
+    /** 自定义输出内容，正常结束后不触发response.send()方法 */
+    takeOver?: boolean;
+}
+
 export interface IDefineRoute extends IDefineRequest {
     baseName: string;
     Target: new(...args: any[]) => any;
 }
 
 export interface IDefineRequestParam {
-    type: 'Body'|'PathParam'|'QueryParam'|'Header'|'Cookie'|'Request'|'Response'|'SESSIONID',
+    type: 'Body'|'PathParam'|'QueryParam'|'Header'|'Cookie'|'Request'|'Response'|'SessionId',
     args?: any[]| string;
 }
 
@@ -61,7 +66,7 @@ export const GetParam = (opt: IDefineRequestParam[]) => (value: Function, contex
     }
 };
 
-export const RequestMapping = (pathname: string, method?: keyof typeof RequestMethod) => (value: Function, context: ClassMethodDecoratorContext<any>) =>{
+export const RequestMapping = (pathname: string, method?: keyof typeof RequestMethod, options?: IMappingOptions) => (value: Function, context: ClassMethodDecoratorContext<any>) =>{
     if(context.kind !== "method" ) {
         throw new Error("The RequestMapping can not use with other class decorator");
     }
@@ -72,17 +77,18 @@ export const RequestMapping = (pathname: string, method?: keyof typeof RequestMe
     requestDataStore.tempRequest.push({
         url:pathname,
         method,
+        options,
         callback: requestCallback,
         callbackName: context.name
     });
     return requestCallback;
 };
 
-export const Get = (pathname: string) => RequestMapping(pathname, "GET");
-export const Post = (pathname: string) => RequestMapping(pathname, "POST");
-export const Delete = (pathname: string) => RequestMapping(pathname, "DELETE");
-export const Put = (pathname: string) => RequestMapping(pathname, "PUT");
-export const Options = (pathname: string) => RequestMapping(pathname, "OPTIONS");
+export const Get = (pathname: string, options?: IMappingOptions) => RequestMapping(pathname, "GET", options);
+export const Post = (pathname: string, options?: IMappingOptions) => RequestMapping(pathname, "POST", options);
+export const Delete = (pathname: string, options?: IMappingOptions) => RequestMapping(pathname, "DELETE", options);
+export const Put = (pathname: string, options?: IMappingOptions) => RequestMapping(pathname, "PUT", options);
+export const Options = (pathname: string, options?: IMappingOptions) => RequestMapping(pathname, "OPTIONS", options);
 
 export const createRequestRoutes = (adapter: Adapter, beforeHandler: Function, responseHandle: Function) => {
     // requestMapping.forEach(callback => callback());
@@ -118,7 +124,7 @@ export const createRequestRoutes = (adapter: Adapter, beforeHandler: Function, r
             beforeHandler(...args);
             utils.invokeEx(controller, route.callbackName, adapter, route, ...args)
                 .then((resp) => {
-                    resolve(resp);
+                    resolve({ data: resp, route });
                     releaseRequest(instanceId, requestId);
                 }).catch((err) => {
                     reject(err);
@@ -188,6 +194,7 @@ export const defineRoute = (baseName: string, Target: new(...args: any[]) => any
         baseName,
         Target
     }));
+    requestDataStore.tempRequest = []; // 清空临时路由注册缓存
     requestDataStore.requests.push(...reqList);
 };
 

@@ -8,4 +8,6 @@ export interface IConfigServer {
     uploadPath: string;
     generateTypePath?: string;
     tempPath: string;
+    /** session过期时间，默认30分钟 */
+    sessionExpired?: number;
 }

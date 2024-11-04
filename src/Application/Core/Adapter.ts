@@ -13,7 +13,7 @@ export abstract class Adapter {
     public readonly configuration: IConfigApplication = {} as any;
 
     abstract listen(log: Log): void;
-    abstract loadRouter(log: Log): void;
+    abstract loadRouter(log: Log, afterRequestHandler: Function): void;
     abstract get(url: string, handler: Function): void;
     abstract post(url: string, handler: Function): void;
     abstract put(url: string, handler: Function): void;

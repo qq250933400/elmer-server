@@ -100,7 +100,7 @@ export class ExpressAdapter extends Adapter {
                     params.push(res);
                     break;
                 }
-                case "SESSIONID": {
+                case "SessionId": {
                     const SSIDKey = this.configuration.Session?.sessionIdKey || GLOBAL_KEY_SESSION_ID_KEY;
                     let saveSSID = this.getCookies(req, SSIDKey);
                     if(utils.isEmpty(saveSSID)) {
@@ -127,7 +127,7 @@ export class ExpressAdapter extends Adapter {
         })
         return params;
     }
-    public loadRouter(log: Log) {
+    public loadRouter(log: Log, afterRequestHandler: Function) {
         this.app.use(express.json());
         this.crossOriginCheck(log);
         log.info("Load routers: ");
@@ -147,20 +147,25 @@ export class ExpressAdapter extends Adapter {
             }
             // crossorigin check
         }, (responseData: Promise<any>, req: Request, res: Response, next) => {
-            responseData.then((data) => {
-                res.send(data);
+            responseData.then(({ data, route }) => {
+                !route.options?.takeOver && res.send(data);
+                afterRequestHandler();
             }).catch((error) => {
                 log.error(error.stack);
                 res.status(error.code || 500);
-                if (error.data) {
-                    res.send({
-                        statusCode: error.statusCode || "Unknown",
-                        message: error.message,
-                        stack: error.data
-                    })
-                } else {
-                    res.send({ statusCode: error.statusCode || "Unknown", message: error.message });
+                if(error.code !== 'ERR_HTTP_HEADERS_SENT') {
+                    //链接为关闭时才可以发送错误信息到前端，防止系统错误
+                    if (error.data) {
+                        res.send({
+                            statusCode: error.statusCode || "Unknown",
+                            message: error.message,
+                            stack: error.data
+                        })
+                    } else {
+                        res.send({ statusCode: error.statusCode || "Unknown", message: error.message });
+                    }
                 }
+                afterRequestHandler();
             });
         });
         if (routeLogs.length > 0) {
@@ -243,7 +248,7 @@ export class ExpressAdapter extends Adapter {
                 url: req.baseUrl
             };
             const isSimpleRequestWithCrossOrigin = crossOriginObj.isSempleRequestWithCrossOrigin(crossOriginCheckOption);
-            log.info(`${req.method} ${req.url}`);
+            log.info(`${req.method} ${req.originalUrl}`);
 
             if(req.method === "OPTIONS" || isSimpleRequestWithCrossOrigin) {
                 const matchAllowHeaders = crossOriginObj.isValidateRequest(crossOriginCheckOption);

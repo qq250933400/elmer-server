@@ -30,5 +30,9 @@ export default defineSchema<IConfigValidationOptionalFields, {},IConfigServer>({
     "staticRoute": {
         type: "String",
         defaultValue: "/static"
+    },
+    "sessionExpired": {
+        type: "Number",
+        defaultValue: 300
     }
 });

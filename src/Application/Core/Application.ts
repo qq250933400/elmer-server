@@ -2,11 +2,14 @@ import { AppServiceEx, AppModel } from "../../Annotation/module";
 import { META_KEY_CONFIG_INFO } from "../../data/constants";
 import { parse } from "yaml";
 import { IConfigApplication } from "../../Config/interface";
+import { Connection } from "../DataBase/Connection";
 
 import fs from "fs";
 import lodash from "lodash";
+
 import { Adapter } from "./Adapter";
 import { Log } from "./Log";
+import { Redis } from "../Redis";
 import {
     META_KEY_MODULE_ID,
     META_KEY_INSTANCE_ID
@@ -22,11 +25,15 @@ interface IConfigInfo {
     }
 }
 
-@AppModel(Log)
+@AppModel(Log, Redis, Connection)
 @AppServiceEx("Application", { "overrideId": true })
 export class Application {
     public configuration: IConfigApplication = {} as any;
-    constructor(private log: Log) {}
+    constructor(
+        private readonly log: Log,
+        private readonly redis: Redis,
+        private readonly dataBaseConn: Connection
+    ) {}
     init(bootApp: any) {
         this.loadConfig(bootApp);
     }
@@ -44,7 +51,15 @@ export class Application {
                 this.log.error(err.message, err.stack);
             });
             adapter.init(this.configuration);
-            adapter.loadRouter(this.log);
+            adapter.loadRouter(this.log, () => {
+                try {
+                    // 在此处释放不必要的链接，比如redis，mysql链接
+                    this.redis.quit(0);
+                    this.dataBaseConn.dispose();
+                } catch(e) {
+                    this.log.error(e.stack);
+                }
+            });
             adapter.listen(this.log);
         } catch(e: any) {
             console.error(e);

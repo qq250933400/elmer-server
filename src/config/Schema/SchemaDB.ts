@@ -8,7 +8,7 @@ export default defineSchema<IConfigValidationOptionalFields, {},IConfigDB>({
         defaultValue: "Mysql",
         // enum: ["Mysql", "MongoDB", "Redis"]
     },
-    "dataBase": {
+    "database": {
         type: "String",
         defaultValue: "test",
         required: true
@@ -33,7 +33,7 @@ export default defineSchema<IConfigValidationOptionalFields, {},IConfigDB>({
         defaultValue: 3306,
         required: true
     },
-    "prefix": {
+    "tablePrefix": {
         type: "String",
         defaultValue: ""
     },

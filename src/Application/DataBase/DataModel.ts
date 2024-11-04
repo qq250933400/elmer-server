@@ -33,7 +33,7 @@ export class DataModel {
     public where(conditions: DataBaseSql.TWhereConditions, logic: DataBaseSql.TWhereLogic = 'AND') {
         return createSqlToken({
             ...this.tableConfig,
-            tablePrefix: this.conn.config.prefix,
+            tablePrefix: this.conn.config.tablePrefix,
             tableName: this.tableName,
             query: (sql, params) => {
                 return new Promise((resolve, reject) => {
@@ -50,9 +50,10 @@ export class DataModel {
     }
     public alias(key: string) {
         this.tableAlias = key;
+        console.log("----Current---Alias--", this.conn.config, this.conn);
         return createSqlToken({
             ...this.tableConfig,
-            tablePrefix: this.conn.config.prefix,
+            tablePrefix: this.conn.config.tablePrefix,
             tableName: this.tableName,
             query: (sql, params) => {
                 return new Promise((resolve, reject) => {
@@ -70,7 +71,7 @@ export class DataModel {
     public select() {
         return createSqlToken({
             ...this.tableConfig,
-            tablePrefix: this.conn.config.prefix,
+            tablePrefix: this.conn.config.tablePrefix,
             tableName: this.tableName,
             query: (sql, params) => {
                 return new Promise((resolve, reject) => {
@@ -93,10 +94,5 @@ export class DataModel {
     }
     public rollback(): Promise<any> {
         return this.conn.rollback();
-    }
-    protected getTableName() {
-        const prefix = this.conn.config?.prefix;
-        const tableName = prefix ? `${prefix}${this.tableName}` : this.tableName;
-        return this.tableAlias ? `${tableName} ${this.tableAlias}` : tableName;
     }
 }

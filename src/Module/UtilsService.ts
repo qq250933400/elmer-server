@@ -14,4 +14,7 @@ export class UtilsService {
     aseDecode(decodeText: string): string {
         return utils.aseDecode(decodeText.toString(), this.config.publicKey?.toString());
     }
+    md5(text: string) {
+        return utils.md5(text);
+    }
 }

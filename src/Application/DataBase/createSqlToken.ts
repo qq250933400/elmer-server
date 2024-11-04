@@ -131,6 +131,7 @@ const createExec = (
     } else {
         sqlList.push('*');
     }
+    console.log(tokenList, "----CreateExecSql---", tablePrefix, tableName);
     tokenList.forEach((item, index) => {
         if(index === 0) {
             sqlList.push("FROM");
@@ -175,6 +176,7 @@ export const createSqlToken = (config: Omit<DataBaseSql.ICreateTokenConfig, "tok
         tokenList,
         valueList,
     };
+    console.log("----SqlConfiguration--", config);
     return {
         alias: (key: string) => {
             const sqlConfig = {

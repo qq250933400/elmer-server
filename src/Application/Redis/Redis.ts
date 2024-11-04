@@ -40,7 +40,7 @@ export class Redis {
                 client.set(key, value, {
                     // "EXAT": opt.expire || 6000
                 }).then((res) => {
-                    opt.expire > 0 && client.expire(key, opt.expire);
+                    opt?.expire > 0 && client.expire(key, opt.expire);
                     resolve(res);
                 }).catch(reject);
             }).catch(reject);
@@ -54,10 +54,14 @@ export class Redis {
         });
     }
     quit(database: number): void {
-        this.log.info(`Release redis connection, database: ${database}`);
-        if(this.clientStore[database]) {
-            this.clientStore[database].quit();
-            delete this.clientStore[database];
+        try {
+            this.log.info(`Release redis connection, database: ${database}`);
+            if(this.clientStore[database]) {
+                this.clientStore[database].quit();
+                delete this.clientStore[database];
+            }
+        } catch(err) {
+            this.log.error(err.stack);
         }
     }
     withRedis(fn: any) {

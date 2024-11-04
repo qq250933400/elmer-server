@@ -3,9 +3,9 @@ export interface IConfigDB {
     port: number;
     host: string;
     type: "Mysql" | "MongoDB" | "Redis";
-    prefix?: string;
+    tablePrefix?: string;
     user: string;
-    dataBase: string;
+    database: string;
     password: string;
     sourcePath: string;
 }

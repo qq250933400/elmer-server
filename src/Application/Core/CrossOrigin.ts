@@ -24,7 +24,7 @@ export class CrossOrigin {
             const origin = option.headers.origin?.replace(/\/$/,"") || "";
             const resHeaders = [];
             let isMatch = false;
-            this.log.debug("Start check cross origin: ", origin, option.url);
+            this.log.debug("Request origin: ", origin, option.url);
             for(const rule of this.configuration.rules) {
                 // 检查请求url域是否和配置中的域相同，相同则应用配置规则，检查配置设置，设置response header
                 if(this.isSameOrigin(origin, utils.isArray(rule.domain) ? rule.domain : [rule.domain])) {

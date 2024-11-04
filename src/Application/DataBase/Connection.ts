@@ -45,4 +45,12 @@ export class Connection {
     rollback(): Promise<any> {
         return this.db.rollback();
     }
+    dispose(): void {
+        try {
+            this.db?.log.info("Close database connection.");
+            this.db?.dispose();
+        } catch(e) {
+            this.db?.log.error(e.stack);
+        }
+    }
 }
