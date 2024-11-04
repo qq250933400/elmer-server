@@ -8,5 +8,4 @@ export interface IConfigServer {
     uploadPath: string;
     generateTypePath?: string;
     tempPath: string;
-    rootPath: string;
 }

@@ -58,7 +58,8 @@ export class Application {
             const { data: { base, env, rootPath }  } = configInfo;
             const baseConfig = this.readConfigData(base);
             const envConfig = this.readConfigData(env);
-            lodash.merge(configData, baseConfig, envConfig || {}, {
+            lodash.merge(configData, baseConfig, {
+                ...(envConfig || {}),
                 rootPath
             });
         });

@@ -37,7 +37,7 @@ export interface IDefineRoute extends IDefineRequest {
 }
 
 export interface IDefineRequestParam {
-    type: 'Body'|'PathParam'|'QueryParam'|'Header'|'Cookie'|'Request'|'Response',
+    type: 'Body'|'PathParam'|'QueryParam'|'Header'|'Cookie'|'Request'|'Response'|'SESSIONID',
     args?: any[]| string;
 }
 

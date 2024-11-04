@@ -100,6 +100,26 @@ export class ExpressAdapter extends Adapter {
                     params.push(res);
                     break;
                 }
+                case "SESSIONID": {
+                    const SSIDKey = this.configuration.Session?.sessionIdKey || GLOBAL_KEY_SESSION_ID_KEY;
+                    let saveSSID = this.getCookies(req, SSIDKey);
+                    if(utils.isEmpty(saveSSID)) {
+                        const oldSessionId = this.getCookies(req, SSIDKey);
+                        if (utils.isEmpty(oldSessionId)) {
+                            const newSessionId = utils.md5(`session_${utils.uuid()}_${Date.now()}`);
+                            res.cookie(SSIDKey, newSessionId, {
+                                "httpOnly": true,
+                                "secure": true,
+                                "path": "/",
+                                "sameSite": true,
+                                "maxAge": this.configuration.Session?.maxAge || 90000,
+                            });
+                            saveSSID = newSessionId;
+                        }
+                    }
+                    params.push(saveSSID);
+                    break;
+                }
                 default: {
                     params.push(null);
                 }
@@ -109,10 +129,9 @@ export class ExpressAdapter extends Adapter {
     }
     public loadRouter(log: Log) {
         this.app.use(express.json());
-        this.crossOriginCheck();
+        this.crossOriginCheck(log);
         log.info("Load routers: ");
         const routeLogs = createRequestRoutes(this, (req: Request, res: Response) => {
-            log.info(`${req.method} ${req.url}`);
             //--------CreateSession id
             const SSID = this.configuration.Session?.sessionIdKey || GLOBAL_KEY_SESSION_ID_KEY;
             const oldSessionId = this.getCookies(req, SSID);
@@ -214,19 +233,30 @@ export class ExpressAdapter extends Adapter {
             return sourceData;
         }
     }
-    private crossOriginCheck() {
+    private crossOriginCheck(log: Log) {
         this.app.use("*", (req: Request, res: Response, next) => {
-            const crossOrginObj = createInstanceInApp(CrossOrigin, this);
-            const matchAllowHeaders = crossOrginObj.isValidateRequest({
+            const crossOriginObj = createInstanceInApp(CrossOrigin, this);
+            const crossOriginCheckOption = {
                 headers: req.headers as any,
                 method: req.method,
                 origin: req.originalUrl,
                 url: req.baseUrl
-            });
-            if (matchAllowHeaders) {
-                matchAllowHeaders.forEach((header) => {
-                    res.header(header.name, header.value);
-                });
+            };
+            const isSimpleRequestWithCrossOrigin = crossOriginObj.isSempleRequestWithCrossOrigin(crossOriginCheckOption);
+            log.info(`${req.method} ${req.url}`);
+
+            if(req.method === "OPTIONS" || isSimpleRequestWithCrossOrigin) {
+                const matchAllowHeaders = crossOriginObj.isValidateRequest(crossOriginCheckOption);
+                if (matchAllowHeaders) {
+                    matchAllowHeaders.forEach((header) => {
+                        res.header(header.name, header.value);
+                    });
+                    if(req.method === "OPTIONS") {
+                        // 只有options请求发送空数据并结束请求。
+                        res.send({});
+                        return;
+                    }
+                }
             }
             next();
         });
