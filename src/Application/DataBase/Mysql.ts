@@ -14,7 +14,6 @@ export class Mysql extends DataBaseEngine {
     dispose(): void {
         this.isConnected && this.conn && this.conn.end();
         this.isConnected = false;
-        this.conn = null;
     }
     loadConnection(config: IConfigDB): void {
         if(!this.conn) {

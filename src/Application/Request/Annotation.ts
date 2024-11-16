@@ -122,14 +122,19 @@ export const createRequestRoutes = (adapter: Adapter, beforeHandler: Function, r
 
         return new Promise((resolve, reject)=> {
             beforeHandler(...args);
-            utils.invokeEx(controller, route.callbackName, adapter, route, ...args)
-                .then((resp) => {
-                    resolve({ data: resp, route });
-                    releaseRequest(instanceId, requestId);
-                }).catch((err) => {
-                    reject(err);
-                    releaseRequest(instanceId, requestId);
-                });
+            try {
+                utils.invokeEx(controller, route.callbackName, adapter, route, ...args)
+                    .then((resp) => {
+                        resolve({ data: resp, route });
+                        releaseRequest(instanceId, requestId);
+                    }).catch((err) => {
+                        reject(err);
+                        releaseRequest(instanceId, requestId);
+                    });
+            }catch(e) {
+                reject(e);
+                console.error(e);
+            }
         })
     };
     const spaceLength = 10;

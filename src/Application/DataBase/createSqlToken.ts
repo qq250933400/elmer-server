@@ -60,6 +60,7 @@ const field = (config: DataBaseSql.ICreateFieldsOptions, fieldConfig: string[]|s
         select: () => select(config.tokenList, config),
         update: () => update(config.tokenList, config),
         delete: () => deleteExec(config.tokenList, config),
+        findOne: () => findOne(config.tokenList, config)
     };
 };
 const where = (config: DataBaseSql.ICreateWhereOptions, condition: DataBaseSql.TWhereConditions, whereLogic: DataBaseSql.TWhereLogic = 'AND') => {
@@ -114,6 +115,7 @@ const where = (config: DataBaseSql.ICreateWhereOptions, condition: DataBaseSql.T
         select: () => select(config.tokenList, config),
         update: () => update(config.tokenList, config),
         delete: () => deleteExec(config.tokenList, config),
+        findOne: () => findOne(config.tokenList, config)
     };
 }
 
@@ -168,6 +170,9 @@ const update = (tokenList: DataBaseSql.ICreateSqlToken[], config: DataBaseSql.IC
 const deleteExec = (tokenList: DataBaseSql.ICreateSqlToken[], config: DataBaseSql.ICreateTokenConfig) => {
     return createExec("DELETE", tokenList, config);
 };
+const findOne = (tokenList: DataBaseSql.ICreateSqlToken[], config: DataBaseSql.ICreateTokenConfig) => {
+    return limit(config, 0, 1).select();
+};
 export const createSqlToken = (config: Omit<DataBaseSql.ICreateTokenConfig, "tokenList"|"valueList">) => {
     const tokenList: any[] = [];
     const valueList: any[] = [];
@@ -176,7 +181,7 @@ export const createSqlToken = (config: Omit<DataBaseSql.ICreateTokenConfig, "tok
         tokenList,
         valueList,
     };
-    console.log("----SqlConfiguration--", config);
+    
     return {
         alias: (key: string) => {
             const sqlConfig = {

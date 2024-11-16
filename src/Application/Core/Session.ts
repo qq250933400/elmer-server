@@ -4,6 +4,10 @@ import { UtilsService } from "../../Module/UtilsService";
 
 import utils from "../../utils/utils";
 
+interface ISessionSaveOption {
+    expire?: number;
+}
+
 @AppModel(Redis, UtilsService)
 @AppService
 export class Session {
@@ -19,11 +23,11 @@ export class Session {
             throw new Error("ssid cannot be empty, missing ssid in request cookie data");
         }
         return {
-            set: (key: string, value: string|number) => {
+            set: (key: string, value: string|number, option?: ISessionSaveOption) => {
                 const saveDataKey = ssidKey + "_" + key;
                 if(this.sessionStorage === "redis") {
                     this.redis.set(saveDataKey, value, {
-                        expire: this.utils.config.sessionExpired || 300
+                        expire: option?.expire || this.utils.config.sessionExpired || 300
                     });
                 }
             },

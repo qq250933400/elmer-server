@@ -50,7 +50,6 @@ export class DataModel {
     }
     public alias(key: string) {
         this.tableAlias = key;
-        console.log("----Current---Alias--", this.conn.config, this.conn);
         return createSqlToken({
             ...this.tableConfig,
             tablePrefix: this.conn.config.tablePrefix,

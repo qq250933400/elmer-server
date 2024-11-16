@@ -151,21 +151,27 @@ export class ExpressAdapter extends Adapter {
                 !route.options?.takeOver && res.send(data);
                 afterRequestHandler();
             }).catch((error) => {
-                log.error(error.stack);
-                res.status(error.code || 500);
-                if(error.code !== 'ERR_HTTP_HEADERS_SENT') {
-                    //链接为关闭时才可以发送错误信息到前端，防止系统错误
-                    if (error.data) {
-                        res.send({
-                            statusCode: error.statusCode || "Unknown",
-                            message: error.message,
-                            stack: error.data
-                        })
-                    } else {
-                        res.send({ statusCode: error.statusCode || "Unknown", message: error.message });
+                try {
+                    log.error(error.stack);
+                    res.status(/^[\d]+$/.test(error.code) ? error.code || 500 : 500);
+                    if(error.code !== 'ERR_HTTP_HEADERS_SENT') {
+                        //链接为关闭时才可以发送错误信息到前端，防止系统错误
+                        if (error.data) {
+                            res.send({
+                                statusCode: error.statusCode || "Unknown",
+                                message: error.message,
+                                stack: error.data
+                            })
+                        } else {
+                            res.send({ statusCode: error.statusCode || "Unknown", message: error.message });
+                        }
                     }
+                    afterRequestHandler();
+                } catch(e) {
+                    log.error(e.stack);
+                    res.sendStatus(500);
+                    res.send();
                 }
-                afterRequestHandler();
             });
         });
         if (routeLogs.length > 0) {

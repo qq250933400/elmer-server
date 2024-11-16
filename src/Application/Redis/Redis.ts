@@ -12,6 +12,12 @@ interface IRedisSaveOption {
     expire?: number;
 }
 
+interface IRedisApi {
+    get<T>(key: string, database?: number): Promise<T>;
+    set(key: string, value: string|number, opt?: IRedisSaveOption): Promise<string>;
+    delete(key: string, database?: number): Promise<string>;
+}
+
 @AppModel(UtilsService, Log)
 @AppService
 export class Redis {
@@ -40,7 +46,7 @@ export class Redis {
                 client.set(key, value, {
                     // "EXAT": opt.expire || 6000
                 }).then((res) => {
-                    opt?.expire > 0 && client.expire(key, opt.expire);
+                    opt?.expire > 0 && client.isOpen && client.expire(key, opt.expire);
                     resolve(res);
                 }).catch(reject);
             }).catch(reject);
@@ -56,7 +62,7 @@ export class Redis {
     quit(database: number): void {
         try {
             this.log.info(`Release redis connection, database: ${database}`);
-            if(this.clientStore[database]) {
+            if(this.clientStore[database] && this.clientStore[database].isOpen) {
                 this.clientStore[database].quit();
                 delete this.clientStore[database];
             }
@@ -64,8 +70,21 @@ export class Redis {
             this.log.error(err.stack);
         }
     }
-    withRedis(fn: any) {
-        
+    /**
+     * 自动调用quit方法
+     * @param fn 回调
+     */
+    async withRedis(fn: (redis: IRedisApi) => Promise<any>, database?: number) {
+        try {
+            await fn({
+                set: this.set.bind(this),
+                get: this.get.bind(this),
+                delete: this.delete.bind(this)
+            });
+            this.quit(database || 0);
+        } catch(e) {
+            this.log.error(e.stack);
+        }
     }
     private getConnection(database: number) {
         return new Promise<RedisClientType<RedisDefaultModules>>((resolve, reject) => {
