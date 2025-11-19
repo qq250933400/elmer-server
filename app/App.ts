@@ -42,3 +42,11 @@ export class App {
         }, "IDataBaseSqlColumn");
     }
 }
+
+
+const set = new Set();
+set.add(2);
+set.add(3);
+set.add(2);
+
+console.log(Array.from(set))

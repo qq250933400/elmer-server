@@ -1,6 +1,7 @@
 /node_modules/
 /logs/
 /lib/
+/dist/
 /types/
 /app/
 /stub/
